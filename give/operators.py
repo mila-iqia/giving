@@ -283,7 +283,7 @@ class _Reducer:
 
 
 @keyword_decorator
-def reducer(func, default_seed=NotSet, postprocess=NotSet, skip_first=0):
+def reducer(func, default_seed=NotSet, postprocess=NotSet):
     op_scan = scan
     name = func.__name__
     if isinstance(func, type):
@@ -307,8 +307,6 @@ def reducer(func, default_seed=NotSet, postprocess=NotSet, skip_first=0):
         else:
             oper = reduce(reducer.reduce, seed=seed)
 
-        if skip_first:
-            oper = pipe(oper, skip(skip_first))
         if postprocess is not NotSet:
             oper = pipe(oper, postprocess)
 

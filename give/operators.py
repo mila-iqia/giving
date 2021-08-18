@@ -285,8 +285,6 @@ class _Reducer:
 @keyword_decorator
 def reducer(func, default_seed=NotSet, postprocess=NotSet, skip_first=0):
     op_scan = scan
-    op_roll = roll
-
     name = func.__name__
     if isinstance(func, type):
         constructor = func
@@ -294,21 +292,17 @@ def reducer(func, default_seed=NotSet, postprocess=NotSet, skip_first=0):
     else:
         constructor = lambda: _Reducer(reduce=func, roll=None)
 
-    def _create(*args, scan=False, roll=False, seed=NotSet, **kwargs):
+    def _create(*args, scan=False, seed=NotSet, **kwargs):
         reducer = constructor(*args, **kwargs)
 
         if seed is NotSet:
             seed = default_seed
 
-        if scan:
-            if roll:
-                raise TypeError(
-                    "The scan and roll options cannot be used at the same time."
-                )
+        if scan is True:
             oper = op_scan(reducer.reduce, seed=seed)
 
-        elif roll:
-            oper = op_roll(n=roll, reduce=reducer.roll, seed=seed)
+        elif scan:
+            oper = roll(n=scan, reduce=reducer.roll, seed=seed)
 
         else:
             oper = reduce(reducer.reduce, seed=seed)

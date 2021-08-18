@@ -88,7 +88,7 @@ def test_rolling_average():
         bs = gv.pipe(op.getitem("b"))
 
         bs.pipe(
-            op.average(roll=7),
+            op.average(scan=7),
         ).subscribe(results1.append)
 
         bs.pipe(
@@ -109,7 +109,7 @@ def test_rolling_average_and_variance():
         bs = gv.pipe(op.getitem("b"))
 
         bs.pipe(
-            op.average_and_variance(roll=7),
+            op.average_and_variance(scan=7),
             op.skip(1),
         ).subscribe(results1.append)
 
@@ -159,7 +159,7 @@ def test_average():
         gv.pipe(op.average(scan=True)).subscribe(results2.append)
 
         results3 = []
-        gv.pipe(op.average(roll=2)).subscribe(results3.append)
+        gv.pipe(op.average(scan=2)).subscribe(results3.append)
 
         things(*values)
 
@@ -184,7 +184,7 @@ def test_count():
         gv.pipe(op.count(lambda x: x > 0, scan=True)).subscribe(results3.append)
 
         results4 = []
-        gv.pipe(op.count(lambda x: x > 0, roll=3)).subscribe(results4.append)
+        gv.pipe(op.count(lambda x: x > 0, scan=3)).subscribe(results4.append)
 
         things(*values)
 

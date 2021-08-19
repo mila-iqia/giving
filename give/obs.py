@@ -3,6 +3,7 @@ from itertools import count
 from varname import varname
 
 from . import operators as op
+from .executors import display
 
 
 def _opmethod(name, operator):
@@ -194,6 +195,9 @@ class ObservableProxy:
     affix = _opmethod("affix", op.affix)
     getitem = _opmethod("getitem", op.getitem)
     where = _opmethod("where", op.where)
+
+    def display(self):
+        return self.subscribe(display)
 
 
 _current = count(1)

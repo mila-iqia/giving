@@ -2,8 +2,8 @@ import pytest
 from rx import operators as op
 from varname import ImproperUseError, VarnameRetrievingError
 
-from give import accumulate, give, given
-from give.core import resolve
+from giving import accumulate, give, given
+from giving.core import resolve
 
 
 def bisect(arr, key):

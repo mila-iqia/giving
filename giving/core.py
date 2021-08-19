@@ -4,7 +4,7 @@ from contextlib import contextmanager
 from contextvars import ContextVar
 
 import rx
-from varname import ImproperUseError, VarnameRetrievingError, argname2, varname
+from varname import ImproperUseError, VarnameRetrievingError, argname, varname
 from varname.utils import get_node
 
 from . import operators as op
@@ -104,11 +104,14 @@ def resolve(frame, func, args):
         return _find_above(frame=frame + 2)
 
     if nargs == 1:
-        assigned_to = varname(frame=frame + 1, strict=True, raise_exc=False)
+        try:
+            assigned_to = varname(frame=frame + 1, strict=True, raise_exc=False)
+        except ImproperUseError:
+            assigned_to = None
         if assigned_to is not None:
             return {assigned_to: args[0]}
 
-    argnames = argname2("args", func=func, frame=frame + 1, vars_only=False)
+    argnames = argname("args", func=func, frame=frame + 1, vars_only=False)
     if argnames is None:
         raise Exception("Could not resolve arg names")
 

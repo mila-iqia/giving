@@ -1,11 +1,10 @@
-# from give import operators as op
 import traceback
 
 import pytest
 from rx import of
 
-from give import give, given, operators as op
-from give.obs import ObservableProxy
+from giving import give, given, operators as op
+from giving.obs import ObservableProxy
 
 
 def test_proxy():

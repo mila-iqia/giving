@@ -121,7 +121,7 @@ pyflakes = ">=2.3.0,<2.4.0"
 
 [[package]]
 name = "importlib-metadata"
-version = "4.6.3"
+version = "4.6.4"
 description = "Read metadata from Python packages"
 category = "dev"
 optional = false
@@ -346,7 +346,7 @@ python-versions = "*"
 
 [[package]]
 name = "varname"
-version = "0.7.2"
+version = "0.8.0"
 description = "Dark magics about variable names in python."
 category = "main"
 optional = false
@@ -372,7 +372,7 @@ testing = ["pytest (>=4.6)", "pytest-checkdocs (>=2.4)", "pytest-flake8", "pytes
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.7"
-content-hash = "f20dacc4c28e18973d080d87f2c77c646164f662dd1523d1332e92df712e6012"
+content-hash = "73eefd7e0a3e6c3d1f153e0cf05456012a8802c9fbc14f181de4955bbba55c31"
 
 [metadata.files]
 appdirs = [
@@ -466,8 +466,8 @@ flake8 = [
     {file = "flake8-3.9.2.tar.gz", hash = "sha256:07528381786f2a6237b061f6e96610a4167b226cb926e2aa2b6b1d78057c576b"},
 ]
 importlib-metadata = [
-    {file = "importlib_metadata-4.6.3-py3-none-any.whl", hash = "sha256:51c6635429c77cf1ae634c997ff9e53ca3438b495f10a55ba28594dd69764a8b"},
-    {file = "importlib_metadata-4.6.3.tar.gz", hash = "sha256:0645585859e9a6689c523927a5032f2ba5919f1f7d0e84bd4533312320de1ff9"},
+    {file = "importlib_metadata-4.6.4-py3-none-any.whl", hash = "sha256:ed5157fef23a4bc4594615a0dd8eba94b2bb36bf2a343fa3d8bb2fa0a62a99d5"},
+    {file = "importlib_metadata-4.6.4.tar.gz", hash = "sha256:7b30a78db2922d78a6f47fb30683156a14f3c6aa5cc23f77cc8967e9ab2d002f"},
 ]
 iniconfig = [
     {file = "iniconfig-1.1.1-py2.py3-none-any.whl", hash = "sha256:011e24c64b7f47f6ebd835bb12a743f2fbe9a26d4cecaa7f53bc4f35ee9da8b3"},
@@ -614,8 +614,8 @@ typing-extensions = [
     {file = "typing_extensions-3.10.0.0.tar.gz", hash = "sha256:50b6f157849174217d0656f99dc82fe932884fb250826c18350e159ec6cdf342"},
 ]
 varname = [
-    {file = "varname-0.7.2-py3-none-any.whl", hash = "sha256:f9f0297e4f3b20a4156dec9bd63460be10e25daedb9bd37a976b63587e740650"},
-    {file = "varname-0.7.2.tar.gz", hash = "sha256:871c1b6bebe1b6875221d68d4cad403e3d189b95a6b96456921b7015de867289"},
+    {file = "varname-0.8.0-py3-none-any.whl", hash = "sha256:7684cbfa7b5e96589c7b70e337c74b47f3e774198293c56f51a208c87e12bd80"},
+    {file = "varname-0.8.0.tar.gz", hash = "sha256:7b599f52573e1f763ad2e204a79373246b3ed73cd9f2d1f75bff81e35ee1a17a"},
 ]
 zipp = [
     {file = "zipp-3.5.0-py3-none-any.whl", hash = "sha256:957cfda87797e389580cb8b9e3870841ca991e2125350677b2ca83a0e99390a3"},

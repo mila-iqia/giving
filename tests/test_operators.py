@@ -1,4 +1,4 @@
-from give import give, given, operators as op
+from giving import give, given, operators as op
 
 TOLERANCE = 1e-6
 

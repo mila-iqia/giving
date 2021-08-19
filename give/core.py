@@ -2,13 +2,13 @@ import ast
 import sys
 from contextlib import contextmanager
 from contextvars import ContextVar
-from varname import argname2, varname, ImproperUseError, VarnameRetrievingError
-from varname.utils import get_node
 
 import rx
+from varname import ImproperUseError, VarnameRetrievingError, argname2, varname
+from varname.utils import get_node
+
 from . import operators as op
 from .obs import ObservableProxy
-
 
 ABSENT = object()
 

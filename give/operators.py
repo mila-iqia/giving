@@ -472,3 +472,30 @@ def where(*keys, **conditions):
         )
 
     return filter(filt)
+
+
+def collect_between(start, end):
+    import rx
+
+    def aggro(source):
+        def subscribe(obs, scheduler=None):
+            current = {}
+
+            def on_next(value):
+                nonlocal current
+
+                if isinstance(value, dict):
+                    if start in value:
+                        current = dict(value)
+                    elif end in value:
+                        current.update(value)
+                        obs.on_next(current)
+                        current = {}
+                    else:
+                        current.update(value)
+
+            return source.subscribe(on_next, obs.on_error, obs.on_completed, scheduler)
+
+        return rx.create(subscribe)
+
+    return aggro

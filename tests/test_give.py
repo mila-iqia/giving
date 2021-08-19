@@ -1,8 +1,9 @@
 import pytest
 from rx import operators as op
+from varname import ImproperUseError, VarnameRetrievingError
+
 from give import accumulate, give, given
 from give.core import resolve
-from varname import ImproperUseError, VarnameRetrievingError
 
 
 def bisect(arr, key):
@@ -98,7 +99,6 @@ def test_give():
 
 
 def test_give_bad():
-
     def bad1():
         give()
 
@@ -108,7 +108,7 @@ def test_give_bad():
 
     def bad3():
         exec(
-"""
+            """
 x = 10
 give()
 """

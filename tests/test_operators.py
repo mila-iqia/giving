@@ -48,9 +48,7 @@ def test_format2():
 def test_format3():
     with given() as gv:
         results = []
-        gv.pipe(op.getitem("a", "b"), op.format("a={},b={}")).subscribe(
-            results.append
-        )
+        gv.pipe(op.getitem("a", "b"), op.format("a={},b={}")).subscribe(results.append)
         fib(5)
         assert results == [
             "a=0,b=1",
@@ -97,9 +95,7 @@ def test_rolling_average():
         ).subscribe(results2.append)
 
         fib(25)
-        assert all(
-            abs(m1 - m2) < TOLERANCE for m1, m2 in zip(results1, results2)
-        )
+        assert all(abs(m1 - m2) < TOLERANCE for m1, m2 in zip(results1, results2))
 
 
 def test_rolling_average_and_variance():
@@ -164,8 +160,12 @@ def test_average():
         things(*values)
 
     assert results1 == [sum(values) / len(values)]
-    assert results2 == [sum(values[:i]) / len(values[:i]) for i in range(1, len(values) + 1)]
-    assert results3 == [values[0]] + [(a + b) / 2 for a, b in zip(values[:-1], values[1:])]
+    assert results2 == [
+        sum(values[:i]) / len(values[:i]) for i in range(1, len(values) + 1)
+    ]
+    assert results3 == [values[0]] + [
+        (a + b) / 2 for a, b in zip(values[:-1], values[1:])
+    ]
 
 
 def test_count():
@@ -233,3 +233,24 @@ def test_where():
     assert results3 == [d for d in everything if "x" in d and "y" in d and d["y"]]
     assert results4 == [d for d in everything if "x" in d and d["x"] > 10]
     assert results5 == [d for d in everything if "x" not in d]
+
+
+def aggron(n):
+    for i in range(n):
+        give(start=True)
+        give(a=i)
+        give(b=i * i)
+        give(end=True)
+
+
+def test_collect_between():
+    with given() as gv:
+        gv.pipe(op.collect_between("start", "end")) >> (results := [])
+
+        aggron(3)
+
+    assert results == [
+        {"start": True, "end": True, "a": 0, "b": 0},
+        {"start": True, "end": True, "a": 1, "b": 1},
+        {"start": True, "end": True, "a": 2, "b": 4},
+    ]

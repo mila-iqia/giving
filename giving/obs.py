@@ -13,10 +13,8 @@ def _opmethod(name, operator):
 
 
 def prox(obs):
-    if isinstance(obs, ObservableProxy):
-        return obs
-    else:
-        return ObservableProxy(obs)
+    assert not isinstance(obs, ObservableProxy)
+    return ObservableProxy(obs)
 
 
 class ObservableProxy:
@@ -188,62 +186,9 @@ class ObservableProxy:
     zip_with_list = _opmethod("zip_with_list", op.zip_with_list)
 
     affix = _opmethod("affix", op.affix)
+    collect_between = _opmethod("collect_between", op.collect_between)
     getitem = _opmethod("getitem", op.getitem)
     where = _opmethod("where", op.where)
 
     def display(self):
         return self.subscribe(display)
-
-
-_current = count(1)
-
-
-class ObservablePlan:
-    def __init__(self, *, parent=None, id=None, create_base=None):
-        self.id = id
-        self.create_base = create_base
-        self.parent = parent
-        self.operations = {}
-        self.pipes = []
-        self.subscribes = []
-
-    def pipe(self, *args, **kwargs):
-        id = next(_current)
-        child = ObservablePlan(parent=self, id=id)
-        self.operations[id] = (child, "pipe", args, kwargs)
-        return child
-
-    def subscribe(self, *args, **kwargs):
-        self.operations[next(_current)] = (None, "subscribe", args, kwargs)
-
-    def _instantiate(self, base, child_path=None):
-        def _do(entry, child_path):
-            (child, method, args, kwargs) = entry
-            p = getattr(base, method)(*args, **kwargs)
-            if child is not None:
-                return child._instantiate(p, child_path)
-
-        if child_path:
-            child_id, *rest = child_path
-            return _do(self.operations[child_id], rest)
-        else:
-            for id, entry in self.operations.items():
-                _do(entry, None)
-            return base
-
-    def instantiate(self, child_path=()):
-        if self.create_base is not None:
-            base = self.create_base()
-            return self._instantiate(base, child_path)
-        else:
-            return self.parent.instantiate((self.child_id, *child_path))
-
-    def __enter__(self):
-        if self.create_base is not None:
-            base = self.create_base()
-            return self.instantiate(base)
-        else:
-            return self.parent.instantiate()
-
-    def __exit__(self, exc_type, exc, tb):
-        pass

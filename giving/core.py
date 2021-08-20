@@ -1,5 +1,7 @@
 import ast
 import sys
+import time
+from collections import namedtuple
 from contextlib import contextmanager
 from contextvars import ContextVar
 
@@ -53,6 +55,26 @@ def register_special(key):
     return deco
 
 
+@register_special("$time")
+def _special_time():
+    return time.time()
+
+
+@register_special("$frame")
+def _special_frame():
+    return sys._getframe(2)
+
+
+LinePosition = namedtuple("LinePosition", ["name", "filename", "lineno"])
+
+
+@register_special("$line")
+def _special_line():
+    fr = sys._getframe(2)
+    co = fr.f_code
+    return LinePosition(co.co_name, co.co_filename, fr.f_lineno)
+
+
 def _find_above(frame):
     node = get_node(frame + 1)
     if node is None:
@@ -92,14 +114,17 @@ def _find_above(frame):
                             rval[name] = fr.f_locals[name]
                         elif name in fr.f_globals:
                             rval[name] = fr.f_globals[name]
-                        else:
+                        else:  # pragma: no cover
+                            # I am not sure how to trigger this
                             raise Exception("Could not resolve value")
                     return rval
 
-            else:
+            else:  # pragma: no cover
+                # I am not sure how to trigger this
                 raise Exception("Could not find node position")
 
-    raise Exception("Could not find node")
+    # I am not sure how to trigger this
+    raise Exception("Could not find node")  # pragma: no cover
 
 
 def resolve(frame, func, args):
@@ -123,7 +148,8 @@ def resolve(frame, func, args):
             return {assigned_to: args[0]}
 
     argnames = argname("args", func=func, frame=frame + 1, vars_only=False)
-    if argnames is None:
+    if argnames is None:  # pragma: no cover
+        # I am not sure how to trigger this
         raise Exception("Could not resolve arg names")
 
     return {name: value for name, value in zip(argnames, args)}
@@ -194,23 +220,15 @@ class given:
 
         if isinstance(self.key, str):
             src = src.pipe(op.getitem(self.key))
-        elif isinstance(self.key, (list, set, tuple)):
-            keys = set(self.key)
-            src = src.pipe(op.filter(lambda values: keys & set(values.keys())))
 
         src.subscribe(lambda _: None)
         return ObservableProxy(src)
 
     def __exit__(self, exc_type=None, exc=None, tb=None):
-        if self.token is None:
-            raise Exception("Cannot exit() given that was not enter()ed")
         for obs in self.observers:
             obs.on_completed()
         current_handler.reset(self.token)
         self.token = self.observers = None
-
-    enter = __enter__
-    exit = __exit__
 
 
 @contextmanager

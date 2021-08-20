@@ -3,7 +3,7 @@ from rx import operators as op
 from varname import ImproperUseError, VarnameRetrievingError
 
 from giving import accumulate, give, given, giver
-from giving.core import register_special, resolve
+from giving.core import LinePosition, register_special, resolve
 
 
 def bisect(arr, key):
@@ -48,6 +48,15 @@ def give_above_annassign(x):
 
 def give_above_augassign(x):
     x += x * x
+    give()
+
+
+grog = 10
+
+
+def give_global():
+    global grog
+    grog = 15
     give()
 
 
@@ -96,6 +105,10 @@ def test_give():
     with accumulate("x") as results:
         give_above_augassign(4)
     assert results == [20]
+
+    with accumulate("grog") as results:
+        give_global()
+    assert results == [grog]
 
 
 def test_give_bad():
@@ -179,3 +192,43 @@ def test_giver_special():
         b = giv(x=5)
 
         assert results == [{"a": 3, "$test": 1234}, {"x": 5, "$test": 1234}]
+
+
+def test_special_time():
+    import time
+
+    t = int(time.time())
+    giv = giver("$time")
+
+    with given() as g:
+        g["$time"].map(int) >> (results := [])
+
+        giv(a=4)
+
+    assert results == [t]
+
+
+def test_special_frame():
+    giv = giver("$frame")
+
+    with given() as g:
+        g["$frame"] >> (results := [])
+
+        giv(a=4)
+
+    (fr,) = results
+    assert fr.f_code.co_filename == __file__
+
+
+def test_special_line():
+    # Note: this should be equal to the line number of giv(a=4)
+    lineno = test_special_line.__code__.co_firstlineno + 9
+
+    giv = giver("$line")
+
+    with given() as g:
+        g["$line"] >> (results := [])
+
+        giv(a=4)
+
+    assert results == [LinePosition("test_special_line", __file__, lineno)]

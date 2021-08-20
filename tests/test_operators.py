@@ -1,4 +1,6 @@
-from giving import give, given, operators as op
+import pytest
+
+from giving import give, given, giver, operators as op
 
 TOLERANCE = 1e-6
 
@@ -27,6 +29,15 @@ def test_getitem2():
         gv.pipe(op.getitem("a", "b")).subscribe(results.append)
         fib(5)
         assert results == [(0, 1), (1, 1), (1, 2), (2, 3), (3, 5)]
+
+
+def test_getitem_strict():
+    with given() as gv:
+        results = []
+        gv.pipe(op.getitem("a", "b", strict=True)).subscribe(results.append)
+        fib(5)
+        with pytest.raises(KeyError):
+            give(a=123)
 
 
 def test_format():
@@ -100,10 +111,9 @@ def test_rolling_average():
 
 def test_rolling_average_and_variance():
     with given() as gv:
-        results1 = []
-        results2 = []
         bs = gv.pipe(op.getitem("b"))
 
+        results1 = []
         bs.pipe(
             op.average_and_variance(scan=7),
             op.skip(1),
@@ -118,6 +128,7 @@ def test_rolling_average_and_variance():
             else:
                 return (None, None)
 
+        results2 = []
         bs.pipe(
             op.roll(7),
             op.map(meanvar),
@@ -129,6 +140,36 @@ def test_rolling_average_and_variance():
             abs(m1 - m2) < TOLERANCE and abs(v1 - v2) < TOLERANCE
             for (m1, v1), (m2, v2) in zip(results1, results2)
         )
+
+
+def test_variance():
+    with given() as gv:
+        bs = gv.pipe(op.getitem("b"))
+
+        results1 = []
+        bs.pipe(
+            op.variance(scan=7),
+            op.skip(1),
+        ).subscribe(results1.append)
+
+        def varcalc(xs):
+            n = len(xs)
+            if len(xs) >= 2:
+                mean = sum(xs) / n
+                var = sum((x - mean) ** 2 for x in xs) / (n - 1)
+                return var
+            else:
+                return (None, None)
+
+        results2 = []
+        bs.pipe(
+            op.roll(7),
+            op.map(varcalc),
+            op.skip(1),
+        ).subscribe(results2.append)
+
+        fib(25)
+        assert all(abs(v1 - v2) < TOLERANCE for v1, v2 in zip(results1, results2))
 
 
 def accum(obs):
@@ -186,12 +227,53 @@ def test_count():
         results4 = []
         gv.pipe(op.count(lambda x: x > 0, scan=3)).subscribe(results4.append)
 
+        results5 = []
+        gv.pipe(op.count(scan=True)).subscribe(results5.append)
+
+        results6 = []
+        gv.pipe(op.count(scan=3)).subscribe(results6.append)
+
         things(*values)
 
     assert results1 == [len(values)]
     assert results2 == [len([v for v in values if v > 0])]
     assert results3 == [1, 2, 2, 3, 3, 3]
     assert results4 == [1, 2, 2, 2, 1, 1]
+    assert results5 == list(range(1, len(values) + 1))
+    assert results6 == [1, 2, 3, 3, 3, 3]
+
+
+def test_min():
+    values = [1, 3, -4, 21, -8, -13]
+
+    with given() as gv:
+        gv["a"].min() >> (results := [])
+
+        things(*values)
+
+    assert results == [-13]
+
+
+def test_max():
+    values = [1, 3, -4, 21, -8, -13]
+
+    with given() as gv:
+        gv["a"].max() >> (results := [])
+
+        things(*values)
+
+    assert results == [21]
+
+
+def test_sum():
+    values = [1, 3, -4, 21, -8, -17]
+
+    with given() as gv:
+        gv["a"].sum() >> (results := [])
+
+        things(*values)
+
+    assert results == [-4]
 
 
 def test_affix():
@@ -253,4 +335,34 @@ def test_collect_between():
         {"start": True, "end": True, "a": 0, "b": 0},
         {"start": True, "end": True, "a": 1, "b": 1},
         {"start": True, "end": True, "a": 2, "b": 4},
+    ]
+
+
+def fact(n):
+    giv = giver(n=n)
+    giv(start=True)
+    give(dummy=1234)
+    if n <= 1:
+        value = n
+    else:
+        f1 = giv(fact(n - 1))
+        value = n * f1
+    return giv(value)
+
+
+def test_collect_between2():
+    with given() as gv:
+        gv.pipe(op.collect_between("begin", "value", common="n")) >> (results := [])
+
+        fact(6)
+
+    print(results)
+
+    assert results == [
+        {"start": True, "n": 1, "value": 1},
+        {"start": True, "n": 2, "value": 2, "f1": 1},
+        {"start": True, "n": 3, "value": 6, "f1": 2},
+        {"start": True, "n": 4, "value": 24, "f1": 6},
+        {"start": True, "n": 5, "value": 120, "f1": 24},
+        {"start": True, "n": 6, "value": 720, "f1": 120},
     ]

@@ -1,2 +1,2 @@
-from .core import accumulate, give, given
+from .core import Giver, accumulate, give, given, giver
 from .version import version

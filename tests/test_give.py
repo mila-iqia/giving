@@ -2,8 +2,8 @@ import pytest
 from rx import operators as op
 from varname import ImproperUseError, VarnameRetrievingError
 
-from giving import accumulate, give, given
-from giving.core import resolve
+from giving import accumulate, give, given, giver
+from giving.core import register_special, resolve
 
 
 def bisect(arr, key):
@@ -125,3 +125,57 @@ give()
 
         with pytest.raises(VarnameRetrievingError):
             bad3()
+
+
+def test_giver():
+    giv = giver("x")
+
+    with given() as g:
+        g >> (results := [])
+
+        giv(1)
+        giv(2, y=3)
+
+        assert results == [{"x": 1}, {"x": 2, "y": 3}]
+
+        with pytest.raises(ImproperUseError, match="1 positional argument"):
+            giv()
+
+        with pytest.raises(ImproperUseError, match="1 positional argument"):
+            giv(1, 2)
+
+
+def test_giver_2():
+    giv = giver("x", "y")
+
+    with given() as g:
+        g >> (results := [])
+
+        giv(1, 2)
+        giv(3, 4)
+
+        assert results == [{"x": 1, "y": 2}, {"x": 3, "y": 4}]
+
+        with pytest.raises(ImproperUseError, match="2 positional argument"):
+            giv()
+
+        with pytest.raises(ImproperUseError, match="2 positional argument"):
+            giv(1)
+
+
+@register_special("$test")
+def special_test():
+    return 1234
+
+
+def test_giver_special():
+    giv = giver("$test")
+
+    with given() as g:
+        g >> (results := [])
+
+        a = 3
+        giv()
+        b = giv(x=5)
+
+        assert results == [{"a": 3, "$test": 1234}, {"x": 5, "$test": 1234}]

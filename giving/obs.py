@@ -1,7 +1,5 @@
 from itertools import count
 
-from varname import varname
-
 from . import operators as op
 from .executors import display
 
@@ -14,7 +12,7 @@ def _opmethod(name, operator):
     return f
 
 
-def _prox(obs):
+def prox(obs):
     if isinstance(obs, ObservableProxy):
         return obs
     else:
@@ -26,16 +24,13 @@ class ObservableProxy:
         self.obs = obs
 
     def pipe(self, *args, **kwargs):
-        return _prox(self.obs.pipe(*args, **kwargs))
+        return prox(self.obs.pipe(*args, **kwargs))
 
     def subscribe(self, *args, **kwargs):
         return self.obs.subscribe(*args, **kwargs)
 
     def subscribe_(self, *args, **kwargs):
         return self.obs.subscribe_(*args, **kwargs)
-
-    def __or__(self, operator):
-        return self.pipe(operator)
 
     def __rshift__(self, subscription):
         if isinstance(subscription, list):

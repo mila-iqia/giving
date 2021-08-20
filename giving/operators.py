@@ -253,17 +253,13 @@ def roll(n, reduce=None, seed=NotSet):  # noqa: F811
             last_size = len(q)
             q.append(x)
             current_size = len(q)
-            if isinstance(current, NotSet):
-                current = x
-            else:
-                current = reduce(
-                    current,
-                    x,
-                    drop=drop,
-                    last_size=last_size,
-                    current_size=current_size,
-                )
-            return current
+            return reduce(
+                current,
+                x,
+                drop=drop,
+                last_size=last_size,
+                current_size=current_size,
+            )
 
         return scan(queue, seed)
 
@@ -376,17 +372,17 @@ def variance(*args, **kwargs):
     return pipe(average_and_variance(*args, **kwargs), starmap(lambda avg, var: var))
 
 
-@reducer()
+@reducer
 def min(last, new):
     return __builtins.min(last, new)
 
 
-@reducer()
+@reducer
 def max(last, new):
     return __builtins.max(last, new)
 
 
-@reducer()
+@reducer
 def sum(last, new):
     return last + new
 
@@ -474,24 +470,31 @@ def where(*keys, **conditions):
     return filter(filt)
 
 
-def collect_between(start, end):
+def collect_between(start, end, common=None):
     import rx
 
     def aggro(source):
         def subscribe(obs, scheduler=None):
-            current = {}
+            dicts = {}
 
             def on_next(value):
-                nonlocal current
-
                 if isinstance(value, dict):
+                    if common is not None:
+                        if common in value:
+                            key = value[common]
+                        else:
+                            return
+                    else:
+                        key = None
                     if start in value:
-                        current = dict(value)
+                        dicts[key] = dict(value)
                     elif end in value:
+                        current = dicts.setdefault(key, {})
                         current.update(value)
                         obs.on_next(current)
-                        current = {}
+                        del dicts[key]
                     else:
+                        current = dicts.setdefault(key, {})
                         current.update(value)
 
             return source.subscribe(on_next, obs.on_error, obs.on_completed, scheduler)

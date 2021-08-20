@@ -42,6 +42,17 @@ _improper_nullary_give_error = (
 )
 
 
+special_keys = {}
+
+
+def register_special(key):
+    def deco(func):
+        special_keys[key] = func
+        return func
+
+    return deco
+
+
 def _find_above(frame):
     node = get_node(frame + 1)
     if node is None:
@@ -118,31 +129,48 @@ def resolve(frame, func, args):
     return {name: value for name, value in zip(argnames, args)}
 
 
-def give(*args, **values):
-    h = current_handler.get()
-    if h:
-        if args:
-            values = {**resolve(1, give, args), **values}
-        elif not values:
-            values = resolve(1, give, ())
-        _dispatch(h, values)
+class Giver:
+    def __init__(self, *, keys=None, special=[], extra={}):
+        self.keys = keys
+        self.special = special
+        self.extra = extra
 
-    if len(args) == 1:
-        return args[0]
-    else:
-        return None
-
-
-def giver(*keys):
-    def _(x):
+    def __call__(self, *args, **values):
         h = current_handler.get()
         if h:
-            _dispatch(h, {k: x for k in keys})
-        return x
+            if self.keys:
+                if len(args) != len(self.keys):
+                    raise ImproperUseError(
+                        f"Giver for {self.keys} must have {len(self.keys)} positional argument(s)."
+                    )
+                keyed = dict(zip(self.keys, args))
+                values = {**keyed, **values}
+            elif args:
+                values = {**resolve(1, self, args), **values}
+            elif not values:
+                values = resolve(1, self, ())
 
-    _.__name__ = f"give_{keys[0]}"
+            for special in self.special:
+                values[special] = special_keys[special]()
 
-    return _
+            if self.extra:
+                values = {**self.extra, **values}
+
+            _dispatch(h, values)
+
+        if len(args) == 1:
+            return args[0]
+        else:
+            return None
+
+
+give = Giver()
+
+
+def giver(*keys, **extra):
+    normal = [k for k in keys if not k.startswith("$")]
+    special = [k for k in keys if k.startswith("$")]
+    return Giver(keys=normal, special=special, extra=extra)
 
 
 class given:

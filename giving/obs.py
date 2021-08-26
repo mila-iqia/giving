@@ -1,7 +1,7 @@
 from itertools import count
 
 from . import operators as op
-from .executors import display
+from .executors import Breakpoint, Displayer
 
 
 def _opmethod(name, operator):
@@ -33,6 +33,8 @@ class ObservableProxy:
     def __rshift__(self, subscription):
         if isinstance(subscription, list):
             subscription = subscription.append
+        elif isinstance(subscription, set):
+            subscription = subscription.add
         return self.subscribe(subscription)
 
     def __getitem__(self, item):
@@ -188,7 +190,23 @@ class ObservableProxy:
     affix = _opmethod("affix", op.affix)
     collect_between = _opmethod("collect_between", op.collect_between)
     getitem = _opmethod("getitem", op.getitem)
+    stream_once = _opmethod("stream_once", op.stream_once)
+    tag = _opmethod("tag", op.tag)
     where = _opmethod("where", op.where)
 
-    def display(self):
-        return self.subscribe(display)
+    def display(self, *, breakword=False, word=None, **kwargs):
+        sub = self.subscribe(Displayer(**kwargs))
+        if breakword:
+            self.breakword(word=word)
+        return sub
+
+    def breakpoint(self):
+        return self.subscribe(Breakpoint())
+
+    def breakword(self, **kwargs):
+        return self.subscribe(Breakpoint(use_breakword=True, **kwargs))
+
+    def give(self, *keys, **extra):
+        from .core import giver
+
+        return self.subscribe(giver(*keys, **extra))

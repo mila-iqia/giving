@@ -17,16 +17,6 @@ ABSENT = object()
 current_handler = ContextVar("current_handler", default=())
 
 
-def _push_handler(handler):
-    hs = current_handler.get()
-    return current_handler.set((*hs, handler))
-
-
-def _dispatch(handlers, values):
-    for handler in handlers:
-        handler(values)
-
-
 _block_classes = {
     ast.If: ("body", "orelse"),
     ast.For: ("body", "orelse"),
@@ -161,6 +151,14 @@ class Giver:
         self.special = special
         self.extra = extra
 
+    @property
+    def line(self):
+        return Giver(keys=self.keys, special=(*self.special, "$line"), extra=self.extra)
+
+    @property
+    def time(self):
+        return Giver(keys=self.keys, special=(*self.special, "$time"), extra=self.extra)
+
     def __call__(self, *args, **values):
         h = current_handler.get()
         if h:
@@ -182,7 +180,8 @@ class Giver:
             if self.extra:
                 values = {**self.extra, **values}
 
-            _dispatch(h, values)
+            for handler in h:
+                handler(values)
 
         if len(args) == 1:
             return args[0]
@@ -216,7 +215,8 @@ class given:
             for obs in self.observers:
                 obs.on_next(values)
 
-        self.token = _push_handler(handler)
+        h = current_handler.get()
+        self.token = current_handler.set((*h, handler))
 
         if isinstance(self.key, str):
             src = src.pipe(op.getitem(self.key))

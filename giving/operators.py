@@ -471,6 +471,23 @@ def where(*keys, **conditions):
 
 
 def collect_between(start, end, common=None):
+    """Collect all data between the start and end keys.
+
+    Example:
+        with given() as gv:
+            gv.collect_between("A", "Z") >> (results := [])
+            give(A=1)
+            give(B=2)
+            give(C=3, D=4, A=5)
+            give(Z=6)
+            assert results == [{"A": 5, "B": 2, "C": 3, "D": 4, "Z": 6}]
+
+    Arguments:
+        start: The key that marks the beginning of the accumulation.
+        end: The key that marks the end of the accumulation.
+        common: A key that must be present in all data and must have
+            the same value in the whole group.
+    """
     import rx
 
     def aggro(source):
@@ -502,3 +519,80 @@ def collect_between(start, end, common=None):
         return rx.create(subscribe)
 
     return aggro
+
+
+def stream_once():
+    """Make sure that upstream operators only run once.
+
+    Use this if upstream operators have side effects, otherwise each
+    downstream subscription will re-run the effects.
+    """
+
+    import rx
+
+    def go(source):
+        observers = []
+
+        def on_next(value):
+            for obv in observers:
+                obv.on_next(value)
+
+        def on_error(value):
+            for obv in observers:
+                obv.on_error(value)
+
+        def on_completed():
+            for obv in observers:
+                obv.on_completed()
+
+        def subscribe(obv, scheduler):
+            observers.append(obv)
+            return dispo
+
+        dispo = source.subscribe_(on_next, on_error, on_completed)
+        return rx.Observable(subscribe)
+
+    return go
+
+
+def tag(group="", field="$word", group_field="$group"):
+    """Tag each dict or object with a unique word.
+
+    If the item is a dict, do `item[field] = <new_word>`, otherwise
+    attempt to do `setattr(item, field, <new_word>)`.
+
+    These tags are displayed specially by the `display` method and they
+    can be used to determine breakpoints with the `breakword` method.
+
+    Arguments:
+        group: An arbitrary group name that corresponds to an independent
+            sequence of words. It determines the color in display.
+        field: The field name in which to put the word
+            (default: `$word`).
+        group_field: The field name in which to put the group
+            (default: `$group`).
+    """
+    try:
+        import breakword as bw
+    except ImportError:
+        raise ImportError(
+            "Package `breakword` must be installed to use the tag() operator"
+        )
+
+    grp = bw.groups[group]
+
+    def tag_data(data):
+        word = grp.gen()
+        if isinstance(data, dict):
+            data = {field: word, **data}
+            if group:
+                data[group_field] = group
+        else:
+            if group:
+                setattr(data, group_field, group)
+                setattr(data, "$group", group)
+            setattr(data, field, word)
+            setattr(data, "$word", word)
+        return data
+
+    return pipe(map(tag_data), stream_once())

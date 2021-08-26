@@ -261,7 +261,7 @@ def roll(n, reduce=None, seed=NotSet):  # noqa: F811
                 current_size=current_size,
             )
 
-        return scan(queue, seed)
+        scan_command = scan(queue, seed)
 
     else:
 
@@ -269,7 +269,9 @@ def roll(n, reduce=None, seed=NotSet):  # noqa: F811
             q.append(x)
             return q
 
-        return scan(queue, q)
+        scan_command = scan(queue, q)
+
+    return pipe(scan_command, stream_once())
 
 
 class _Reducer:
@@ -596,3 +598,41 @@ def tag(group="", field="$word", group_field="$group"):
         return data
 
     return pipe(map(tag_data), stream_once())
+
+
+def unique():
+    """Collect unique elements.
+
+    Be aware that this keeps a set of all the elements seen so far,
+    so it may prevent them from being reclaimed by garbage collection
+    and can be expensive in memory.
+    """
+    import rx
+
+    def oper(source):
+        def subscribe(obv, scheduler=None):
+            elements = set()
+
+            def on_next(value):
+                if isinstance(value, dict):
+                    key = tuple(value.items())
+                else:
+                    key = value
+
+                if key not in elements:
+                    elements.add(key)
+                    obv.on_next(value)
+
+            return source.subscribe(on_next, obv.on_error, obv.on_completed, scheduler)
+
+        return rx.create(subscribe)
+
+    return oper
+
+
+def as_(key):
+    """Make a stream of dictionaries using the given key.
+
+    For example, [1, 2].as_("x") => [{"x": 1}, {"x": 2}]
+    """
+    return map(lambda x: {key: x})

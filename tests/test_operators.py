@@ -15,6 +15,11 @@ def fib(n):
     return b
 
 
+def things(*values):
+    for a in values:
+        give(a)
+
+
 def test_getitem():
     with given() as gv:
         results = []
@@ -176,11 +181,6 @@ def accum(obs):
     results = []
     obs.subscribe(results.append)
     return results
-
-
-def things(*values):
-    for a in values:
-        give(a)
 
 
 def test_average():
@@ -366,3 +366,22 @@ def test_collect_between2():
         {"start": True, "n": 5, "value": 120, "f1": 24},
         {"start": True, "n": 6, "value": 720, "f1": 120},
     ]
+
+
+def test_unique():
+    with given() as gv:
+        gv.unique()["?a"] >> (results := [])
+
+        things(1, 2, 3, 1, 4, 5, 5, 1)
+        give(b=10)
+
+        assert results == [1, 2, 3, 4, 5]
+
+
+def test_as():
+    with given() as gv:
+        gv["a"].as_("z") >> (results := [])
+
+        things(1, 2)
+
+        assert results == [{"z": 1}, {"z": 2}]

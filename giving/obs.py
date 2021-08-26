@@ -188,10 +188,12 @@ class ObservableProxy:
     zip_with_list = _opmethod("zip_with_list", op.zip_with_list)
 
     affix = _opmethod("affix", op.affix)
+    as_ = _opmethod("as_", op.as_)
     collect_between = _opmethod("collect_between", op.collect_between)
     getitem = _opmethod("getitem", op.getitem)
     stream_once = _opmethod("stream_once", op.stream_once)
     tag = _opmethod("tag", op.tag)
+    unique = _opmethod("unique", op.unique)
     where = _opmethod("where", op.where)
 
     def display(self, *, breakword=False, word=None, **kwargs):

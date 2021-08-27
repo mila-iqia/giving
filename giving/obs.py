@@ -191,8 +191,11 @@ class ObservableProxy:
     as_ = _opmethod("as_", op.as_)
     collect_between = _opmethod("collect_between", op.collect_between)
     getitem = _opmethod("getitem", op.getitem)
+    keymap = _opmethod("keymap", op.keymap)
+    rekey = _opmethod("rekey", op.rekey)
     stream_once = _opmethod("stream_once", op.stream_once)
     tag = _opmethod("tag", op.tag)
+    throttle = _opmethod("throttle", op.throttle)
     unique = _opmethod("unique", op.unique)
     where = _opmethod("where", op.where)
 

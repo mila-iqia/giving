@@ -83,6 +83,20 @@ def test_keymap():
         assert results == [-1, -1, -2, -3, -5]
 
 
+def test_keymap2():
+    with given() as gv:
+        results = []
+        gv.keymap(x=lambda b: -b, y=lambda a: a * a) >> results
+        fib(5)
+        assert results == [
+            {"x": -1, "y": 0},
+            {"x": -1, "y": 1},
+            {"x": -2, "y": 1},
+            {"x": -3, "y": 4},
+            {"x": -5, "y": 9},
+        ]
+
+
 def test_roll():
     with given() as gv:
         results = []
@@ -385,3 +399,22 @@ def test_as():
         things(1, 2)
 
         assert results == [{"z": 1}, {"z": 2}]
+
+
+def test_rekey():
+    with given() as gv:
+        gv.rekey(a="z") >> (results := [])
+
+        things(1, 2)
+
+        assert results == [{"z": 1}, {"z": 2}]
+
+
+def test_rekey_2():
+    with given() as gv:
+        gv.rekey("b", c="d") >> (results := [])
+
+        give(a=1, b=2, c=3)
+        give(a=4, b=5, c=6)
+
+        assert results == [{"b": 2, "d": 3}, {"b": 5, "d": 6}]

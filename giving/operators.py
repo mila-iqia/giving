@@ -184,35 +184,53 @@ def getitem(*names, strict=False):
             )
 
 
-def keymap(fn):
+def keymap(_fn=None, **_kwargs):
     """Map a dict, passing keyword arguments.
 
+    keymap either takes a positional function argument or keyword arguments
+    serving to build a new dict.
+
     Arguments:
-        fn: A function that will be called for each element, passing the
+        _fn: A function that will be called for each element, passing the
             element using **kwargs.
 
             Note: If the dict has elements that are not in the function's
             arguments list and the function does not have a **kwargs
             argument, these elements will be dropped and no error will
             occur.
+        _kwargs: Alternatively, build a new dict with each key associated to
+            a function with the same interface as fn.
     """
     import types
 
-    if isinstance(fn, types.FunctionType):
-        KWVAR_FLAG = 8
-        co = fn.__code__
-        if not co.co_flags & KWVAR_FLAG:
-            fn = types.FunctionType(
-                name=fn.__name__,
-                code=co.replace(
-                    co_flags=co.co_flags | KWVAR_FLAG,
-                    # Add a dummy keyword argument with an illegal name
-                    co_varnames=(*co.co_varnames, "#"),
-                ),
-                globals=fn.__globals__,
-            )
+    def modfn(fn):
+        if isinstance(fn, types.FunctionType):
+            KWVAR_FLAG = 8
+            co = fn.__code__
+            if not co.co_flags & KWVAR_FLAG:
+                fn = types.FunctionType(
+                    name=fn.__name__,
+                    code=co.replace(
+                        co_flags=co.co_flags | KWVAR_FLAG,
+                        # Add a dummy keyword argument with an illegal name
+                        co_varnames=(*co.co_varnames, "#"),
+                    ),
+                    globals=fn.__globals__,
+                )
+        return fn
 
-    return map(lambda kwargs: fn(**kwargs))
+    if _fn and _kwargs or not _fn and not _kwargs:
+        raise TypeError(
+            "keymap either takes one argument or keyword arguments but not both"
+        )
+
+    elif _fn:
+        _fn = modfn(_fn)
+        return map(lambda kwargs: _fn(**kwargs))
+
+    else:
+        fns = {k: modfn(fn) for k, fn in _kwargs.items()}
+        return map(lambda kwargs: {k: fn(**kwargs) for k, fn in fns.items()})
 
 
 def roll(n, reduce=None, seed=NotSet):  # noqa: F811
@@ -636,3 +654,18 @@ def as_(key):
     For example, [1, 2].as_("x") => [{"x": 1}, {"x": 2}]
     """
     return map(lambda x: {key: x})
+
+
+def rekey(*keep, **remap):
+    """Keep certain dict keys and remap others.
+
+    Arguments:
+        keep: Keys that must be kept
+        remap: Keys that must be renamed
+    """
+    remap = {**{k: k for k in keep}, **remap}
+
+    def _rekey(data):
+        return {k2: data[k1] for k1, k2 in remap.items()}
+
+    return map(_rekey)

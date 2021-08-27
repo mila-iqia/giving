@@ -4,6 +4,7 @@ import time
 from collections import namedtuple
 from contextlib import contextmanager
 from contextvars import ContextVar
+from types import SimpleNamespace
 
 import rx
 from varname import ImproperUseError, VarnameRetrievingError, argname, varname
@@ -14,8 +15,7 @@ from .obs import ObservableProxy
 
 ABSENT = object()
 
-current_handler = ContextVar("current_handler", default=())
-
+global_context = ContextVar("global_context", default=())
 
 _block_classes = {
     ast.If: ("body", "orelse"),
@@ -146,21 +146,32 @@ def resolve(frame, func, args):
 
 
 class Giver:
-    def __init__(self, *, keys=None, special=[], extra={}):
+    def __init__(self, *, keys=None, special=[], extra={}, context=global_context):
         self.keys = keys
         self.special = special
         self.extra = extra
+        self.context = context
 
     @property
     def line(self):
-        return Giver(keys=self.keys, special=(*self.special, "$line"), extra=self.extra)
+        return Giver(
+            keys=self.keys,
+            special=(*self.special, "$line"),
+            extra=self.extra,
+            context=self.context,
+        )
 
     @property
     def time(self):
-        return Giver(keys=self.keys, special=(*self.special, "$time"), extra=self.extra)
+        return Giver(
+            keys=self.keys,
+            special=(*self.special, "$time"),
+            extra=self.extra,
+            context=self.context,
+        )
 
     def __call__(self, *args, **values):
-        h = current_handler.get()
+        h = self.context.get()
         if h:
             if self.keys:
                 if len(args) != len(self.keys):
@@ -189,19 +200,17 @@ class Giver:
             return None
 
 
-give = Giver()
-
-
 def giver(*keys, **extra):
     normal = [k for k in keys if not k.startswith("$")]
     special = [k for k in keys if k.startswith("$")]
     return Giver(keys=normal, special=special, extra=extra)
 
 
-class given:
-    def __init__(self, key=None):
+class Given:
+    def __init__(self, key=None, context=global_context):
         self.key = key
         self.token = self.observers = None
+        self.context = context
 
     def __enter__(self):
         self.observers = []
@@ -215,8 +224,8 @@ class given:
             for obs in self.observers:
                 obs.on_next(values)
 
-        h = current_handler.get()
-        self.token = current_handler.set((*h, handler))
+        h = self.context.get()
+        self.token = self.context.set((*h, handler))
 
         if isinstance(self.key, str):
             src = src.pipe(op.getitem(self.key))
@@ -227,13 +236,32 @@ class given:
     def __exit__(self, exc_type=None, exc=None, tb=None):
         for obs in self.observers:
             obs.on_completed()
-        current_handler.reset(self.token)
+        self.context.reset(self.token)
         self.token = self.observers = None
 
 
-@contextmanager
-def accumulate(key=None):
-    results = []
-    with given(key) as gv:
-        gv.subscribe(results.append)
-        yield results
+def make_give(context=None):
+    context = context or ContextVar("context", default=())
+    give = Giver(context=context)
+    given = lambda *args, **kwargs: Given(*args, **kwargs, context=context)
+
+    @contextmanager
+    def accumulate(key=None):
+        results = []
+        with given(key) as gv:
+            gv.subscribe(results.append)
+            yield results
+
+    return SimpleNamespace(
+        context=context,
+        give=give,
+        given=given,
+        accumulate=accumulate,
+    )
+
+
+_global_given = make_give(context=global_context)
+
+give = _global_given.give
+given = _global_given.given
+accumulate = _global_given.accumulate

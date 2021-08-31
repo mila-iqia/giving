@@ -86,7 +86,7 @@ def test_keymap():
 def test_keymap2():
     with given() as gv:
         results = []
-        gv.keymap(x=lambda b: -b, y=lambda a: a * a) >> results
+        gv.keymap(x=lambda **kw: -kw["b"], y=lambda a: a * a) >> results
         fib(5)
         assert results == [
             {"x": -1, "y": 0},
@@ -95,6 +95,21 @@ def test_keymap2():
             {"x": -3, "y": 4},
             {"x": -5, "y": 9},
         ]
+
+
+def test_keymap_err():
+    with given() as gv:
+        with pytest.raises(TypeError):
+            gv.keymap(lambda a: -a, b=lambda b: -b)
+
+
+def test_keyfilter():
+    with given() as gv:
+        gv.keyfilter(lambda a: a > 0)["a"] >> (results := [])
+
+        things(0, 1, -2, 3, -4, 5)
+
+        assert results == [1, 3, 5]
 
 
 def test_roll():
@@ -384,12 +399,24 @@ def test_collect_between2():
 
 def test_unique():
     with given() as gv:
-        gv.unique()["?a"] >> (results := [])
+        gv["?a"] >> (result_set := set())
+        gv.unique()["?a"] >> (result_list := [])
 
         things(1, 2, 3, 1, 4, 5, 5, 1)
         give(b=10)
 
-        assert results == [1, 2, 3, 4, 5]
+        assert list(result_set) == result_list
+
+
+def test_unique2():
+    with given() as gv:
+        gv["?a"] >> (result_set := set())
+        gv["?a"].unique() >> (result_list := [])
+
+        things(1, 2, 3, 1, 4, 5, 5, 1)
+        give(b=10)
+
+        assert list(result_set) == result_list
 
 
 def test_as():
@@ -418,3 +445,37 @@ def test_rekey_2():
         give(a=4, b=5, c=6)
 
         assert results == [{"b": 2, "d": 3}, {"b": 5, "d": 6}]
+
+
+def test_tag():
+    with given() as gv:
+        gv.tag(group="anemone") >> (results := [])
+
+        things(1, 2, 3)
+
+    assert results == [
+        {"a": 1, "$group": "anemone", "$word": "share"},
+        {"a": 2, "$group": "anemone", "$word": "hope"},
+        {"a": 3, "$group": "anemone", "$word": "push"},
+    ]
+
+
+def test_tag2():
+    class X:
+        pass
+
+    with given() as gv:
+        gv["a"].tag(group="gargamel", field="wrrd") >> (results := [])
+
+        things(X(), X())
+
+    x0, x1 = results
+
+    assert x0.wrrd == "fill"
+    assert x1.wrrd == "stay"
+
+    assert getattr(x0, "$word") == "fill"
+    assert getattr(x1, "$word") == "stay"
+
+    assert getattr(x0, "$group") == "gargamel"
+    assert getattr(x1, "$group") == "gargamel"

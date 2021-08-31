@@ -184,6 +184,34 @@ def getitem(*names, strict=False):
             )
 
 
+def __modfn(fn):
+    import types
+
+    if isinstance(fn, types.FunctionType):
+        KWVAR_FLAG = 8
+        co = fn.__code__
+        if not co.co_flags & KWVAR_FLAG:
+            newfn = types.FunctionType(
+                name=fn.__name__,
+                code=co.replace(
+                    co_flags=co.co_flags | KWVAR_FLAG,
+                    # Add a dummy keyword argument with an illegal name
+                    co_varnames=(*co.co_varnames, "#"),
+                ),
+                globals=fn.__globals__,
+            )
+            newfn.__defaults__ = fn.__defaults__
+            newfn.__kwdefaults__ = fn.__kwdefaults__
+            return newfn
+
+    return fn
+
+
+def keyfilter(fn=None):
+    fn = __modfn(fn)
+    return filter(lambda kwargs: fn(**kwargs))
+
+
 def keymap(_fn=None, **_kwargs):
     """Map a dict, passing keyword arguments.
 
@@ -201,35 +229,17 @@ def keymap(_fn=None, **_kwargs):
         _kwargs: Alternatively, build a new dict with each key associated to
             a function with the same interface as fn.
     """
-    import types
-
-    def modfn(fn):
-        if isinstance(fn, types.FunctionType):
-            KWVAR_FLAG = 8
-            co = fn.__code__
-            if not co.co_flags & KWVAR_FLAG:
-                fn = types.FunctionType(
-                    name=fn.__name__,
-                    code=co.replace(
-                        co_flags=co.co_flags | KWVAR_FLAG,
-                        # Add a dummy keyword argument with an illegal name
-                        co_varnames=(*co.co_varnames, "#"),
-                    ),
-                    globals=fn.__globals__,
-                )
-        return fn
-
     if _fn and _kwargs or not _fn and not _kwargs:
         raise TypeError(
             "keymap either takes one argument or keyword arguments but not both"
         )
 
     elif _fn:
-        _fn = modfn(_fn)
+        _fn = __modfn(_fn)
         return map(lambda kwargs: _fn(**kwargs))
 
     else:
-        fns = {k: modfn(fn) for k, fn in _kwargs.items()}
+        fns = {k: __modfn(fn) for k, fn in _kwargs.items()}
         return map(lambda kwargs: {k: fn(**kwargs) for k, fn in fns.items()})
 
 
@@ -557,7 +567,7 @@ def stream_once():
             for obv in observers:
                 obv.on_next(value)
 
-        def on_error(value):
+        def on_error(value):  # pragma: no cover
             for obv in observers:
                 obv.on_error(value)
 
@@ -594,7 +604,7 @@ def tag(group="", field="$word", group_field="$group"):
     """
     try:
         import breakword as bw
-    except ImportError:
+    except ImportError:  # pragma: no cover
         raise ImportError(
             "Package `breakword` must be installed to use the tag() operator"
         )

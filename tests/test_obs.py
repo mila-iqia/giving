@@ -6,6 +6,8 @@ from rx import of
 from giving import give, given, operators as op
 from giving.obs import ObservableProxy
 
+from .test_operators import things
+
 
 def test_proxy():
     results = []
@@ -41,3 +43,23 @@ def test_proxy_dicts_strict():
 
         with pytest.raises(KeyError):
             liesse()
+
+
+def test_give_method():
+    with given() as gv:
+        gv["?z1"] >> (results1 := [])
+        gv["?z2"] >> (results2 := [])
+        gv.where(q=True)["z3"] >> (results3 := [])
+        gv["?z4"] >> (results4 := [])
+        gv["?z5"] >> (results5 := [])
+
+        gv["?a"].map(lambda x: x + 1).as_("z1").give()
+        gv["?a"].map(lambda x: x + 1).give("z2")
+        gv["?a"].map(lambda x: x + 1).as_("z3").give(q=True)
+        gv["?a"].map(lambda x: (x + 2, x + 3)).give("z4", "z5")
+
+        things(1, 2, 3)
+
+        assert results1 == results2 == results3 == [2, 3, 4]
+        assert results4 == [3, 4, 5]
+        assert results5 == [4, 5, 6]

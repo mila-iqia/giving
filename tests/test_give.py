@@ -198,12 +198,11 @@ def test_special_time():
     import time
 
     t = int(time.time())
-    giv = giver("$time")
 
     with given() as g:
         g["$time"].map(int) >> (results := [])
 
-        giv(a=4)
+        give.time(a=4)
 
     assert results == [t]
 
@@ -222,13 +221,11 @@ def test_special_frame():
 
 def test_special_line():
     # Note: this should be equal to the line number of giv(a=4)
-    lineno = test_special_line.__code__.co_firstlineno + 9
-
-    giv = giver("$line")
+    lineno = test_special_line.__code__.co_firstlineno + 7
 
     with given() as g:
         g["$line"] >> (results := [])
 
-        giv(a=4)
+        give.line(a=4)
 
     assert results == [LinePosition("test_special_line", __file__, lineno)]

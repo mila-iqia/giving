@@ -5,7 +5,7 @@ from datetime import datetime
 
 try:
     import breakword as bw
-except ImportError:
+except ImportError:  # pragma: no cover
     bw = None
 
 

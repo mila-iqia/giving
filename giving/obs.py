@@ -190,7 +190,9 @@ class ObservableProxy:
     affix = _opmethod("affix", op.affix)
     as_ = _opmethod("as_", op.as_)
     collect_between = _opmethod("collect_between", op.collect_between)
+    format = _opmethod("format", op.format)
     getitem = _opmethod("getitem", op.getitem)
+    keyfilter = _opmethod("keyfilter", op.keyfilter)
     keymap = _opmethod("keymap", op.keymap)
     rekey = _opmethod("rekey", op.rekey)
     stream_once = _opmethod("stream_once", op.stream_once)
@@ -212,6 +214,17 @@ class ObservableProxy:
         return self.subscribe(Breakpoint(use_breakword=True, **kwargs))
 
     def give(self, *keys, **extra):
-        from .core import giver
+        from .core import Giver
 
-        return self.subscribe(giver(*keys, **extra))
+        giver = Giver(keys=keys, extra=extra)
+
+        if len(keys) == 0:
+            gv = giver.produce
+        elif len(keys) == 1:
+            gv = giver
+        else:
+
+            def gv(x):
+                return giver(*x)
+
+        return self.subscribe(gv)

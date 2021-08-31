@@ -52,7 +52,7 @@ def _special_time():
 
 @register_special("$frame")
 def _special_frame():
-    return sys._getframe(2)
+    return sys._getframe(3)
 
 
 LinePosition = namedtuple("LinePosition", ["name", "filename", "lineno"])
@@ -60,7 +60,7 @@ LinePosition = namedtuple("LinePosition", ["name", "filename", "lineno"])
 
 @register_special("$line")
 def _special_line():
-    fr = sys._getframe(2)
+    fr = sys._getframe(3)
     co = fr.f_code
     return LinePosition(co.co_name, co.co_filename, fr.f_lineno)
 
@@ -170,6 +170,16 @@ class Giver:
             context=self.context,
         )
 
+    def produce(self, values):
+        for special in self.special:
+            values[special] = special_keys[special]()
+
+        if self.extra:
+            values = {**self.extra, **values}
+
+        for handler in self.context.get():
+            handler(values)
+
     def __call__(self, *args, **values):
         h = self.context.get()
         if h:
@@ -185,14 +195,7 @@ class Giver:
             elif not values:
                 values = resolve(1, self, ())
 
-            for special in self.special:
-                values[special] = special_keys[special]()
-
-            if self.extra:
-                values = {**self.extra, **values}
-
-            for handler in h:
-                handler(values)
+            self.produce(values)
 
         if len(args) == 1:
             return args[0]

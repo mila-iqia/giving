@@ -107,7 +107,7 @@ class Displayer:
 display = Displayer()
 
 
-class Breakpoint:
+class Breakpoint:  # pragma: no cover
     def __init__(self, use_breakword=False, word=None):
         self.word = word
         if use_breakword:

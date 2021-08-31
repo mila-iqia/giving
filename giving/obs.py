@@ -203,14 +203,14 @@ class ObservableProxy:
 
     def display(self, *, breakword=False, word=None, **kwargs):
         sub = self.subscribe(Displayer(**kwargs))
-        if breakword:
+        if breakword:  # pragma: no cover
             self.breakword(word=word)
         return sub
 
-    def breakpoint(self):
+    def breakpoint(self):  # pragma: no cover
         return self.subscribe(Breakpoint())
 
-    def breakword(self, **kwargs):
+    def breakword(self, **kwargs):  # pragma: no cover
         return self.subscribe(Breakpoint(use_breakword=True, **kwargs))
 
     def give(self, *keys, **extra):

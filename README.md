@@ -13,6 +13,7 @@ Here are tasks that are made easier and cleaner by `giving`:
 * Set breakpoints on complex conditions
 * Isolate all logging logic (e.g. you want to use [wandb](https://wandb.ai/site) or [mlflow](https://mlflow.org/) but want neither of them in your core logic)
 
+<img width="450" alt="giving" src="https://user-images.githubusercontent.com/599820/131753730-daf0034c-0060-4ab3-9b58-e11fff25c2e1.png">
 
 Here is an example:
 

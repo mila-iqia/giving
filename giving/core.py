@@ -246,7 +246,9 @@ class Given:
 def make_give(context=None):
     context = context or ContextVar("context", default=())
     give = Giver(context=context)
-    given = lambda *args, **kwargs: Given(*args, **kwargs, context=context)
+
+    def given(*args, **kwargs):
+        return Given(*args, **kwargs, context=context)
 
     @contextmanager
     def accumulate(key=None):

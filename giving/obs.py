@@ -1,5 +1,3 @@
-from itertools import count
-
 from . import operators as op
 from .executors import Breakpoint, Displayer
 
@@ -189,16 +187,19 @@ class ObservableProxy:
 
     affix = _opmethod("affix", op.affix)
     as_ = _opmethod("as_", op.as_)
+    average_and_variance = _opmethod("average_and_variance", op.average_and_variance)
     collect_between = _opmethod("collect_between", op.collect_between)
     format = _opmethod("format", op.format)
     getitem = _opmethod("getitem", op.getitem)
     keyfilter = _opmethod("keyfilter", op.keyfilter)
     keymap = _opmethod("keymap", op.keymap)
     rekey = _opmethod("rekey", op.rekey)
+    roll = _opmethod("roll", op.roll)
     stream_once = _opmethod("stream_once", op.stream_once)
     tag = _opmethod("tag", op.tag)
     throttle = _opmethod("throttle", op.throttle)
     unique = _opmethod("unique", op.unique)
+    variance = _opmethod("variance", op.variance)
     where = _opmethod("where", op.where)
 
     def display(self, *, breakword=False, word=None, **kwargs):

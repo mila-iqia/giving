@@ -1,5 +1,4 @@
 import pytest
-from rx import operators as op
 from varname import ImproperUseError, VarnameRetrievingError
 
 from giving import accumulate, give, given, giver
@@ -12,7 +11,7 @@ def bisect(arr, key):
     while lo < hi - 1:
         mid = lo + (hi - lo) // 2
         give(mid=mid)
-        if (elem := arr[mid]) > key:
+        if arr[mid] > key:
             hi = mid
         else:
             lo = mid
@@ -25,30 +24,36 @@ def give_arg(x):
 
 def give_assign(x):
     y = give(x)
+    return y
 
 
 def give_multi_assign(x):
     z = y = give(x)
+    return y, z
 
 
 def give_above(x):
     y = x * x
     give()
+    return y
 
 
 def give_above_multi_assign(x):
     z = y = x * x
     give()
+    return y, z
 
 
 def give_above_annassign(x):
     y: int = x * x
     give()
+    return y
 
 
 def give_above_augassign(x):
     x += x * x
     give()
+    return x
 
 
 grog = 10
@@ -187,9 +192,9 @@ def test_giver_special():
     with given() as g:
         g >> (results := [])
 
-        a = 3
+        a = 3  # noqa: F841
         giv()
-        b = giv(x=5)
+        b = giv(x=5)  # noqa: F841
 
         assert results == [{"a": 3, "$test": 1234}, {"x": 5, "$test": 1234}]
 

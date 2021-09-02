@@ -28,6 +28,17 @@ def test_display(capsys):
     )
     assert captured.err == ""
 
+    # No dict
+
+    with given() as gv:
+        gv["a"].display(colors=False)
+
+        give(a=1234)
+
+    captured = capsys.readouterr()
+    assert captured.out == "1234\n"
+    assert captured.err == ""
+
 
 def test_display_line(capsys):
     with given() as gv:
@@ -36,7 +47,7 @@ def test_display_line(capsys):
         give.line(abc=123)
 
     captured = capsys.readouterr()
-    assert captured.out == "(tests/test_executors.py:36 test_display_line) abc: 123\n"
+    assert captured.out == "(tests/test_executors.py:47 test_display_line) abc: 123\n"
     assert captured.err == ""
 
 
@@ -52,6 +63,8 @@ def test_display_time(capsys):
 
 
 def test_display_word(capsys):
+    # From dict
+
     with given() as gv:
         gv.tag(group="cerise").display(colors=False)
 
@@ -61,16 +74,16 @@ def test_display_word(capsys):
     assert captured.out == "«cerise:quite» abc: 123\n"
     assert captured.err == ""
 
+    # From object
 
-def test_display_word_from_object(capsys):
-    class X:
+    class XXX:
         def __str__(self):
             return "xxx"
 
     with given() as gv:
         gv["abc"].tag(group="meringue").display(colors=False)
 
-        give(abc=X())
+        give(abc=XXX())
 
     captured = capsys.readouterr()
     assert captured.out == "«meringue:for» xxx\n"

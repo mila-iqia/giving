@@ -1,5 +1,8 @@
+from contextlib import contextmanager
+
 from . import operators as op
 from .executors import Breakpoint, Displayer
+from .utils import lax_function
 
 
 def _opmethod(name, operator):
@@ -229,3 +232,25 @@ class ObservableProxy:
                 return giver(*x)
 
         return self.subscribe(gv)
+
+    def keysubscribe(self, fn):
+        fn = lax_function(fn)
+        self.subscribe(lambda data: fn(**data))
+
+    def wrap(self, fn, begin="$begin", end="$end"):
+        fn = contextmanager(lax_function(fn))
+
+        managers = {}
+
+        def watch(data):
+            if begin in data:
+                key = data[begin]
+                assert key not in data
+                managers[key] = fn(**data)
+                managers[key].__enter__()
+
+            if end in data:
+                key = data[end]
+                managers[key].__exit__(None, None, None)
+
+        return self.subscribe(watch)

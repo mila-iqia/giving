@@ -234,3 +234,64 @@ def test_special_line():
         give.line(a=4)
 
     assert results == [LinePosition("test_special_line", __file__, lineno)]
+
+
+def test_keysubscribe():
+    with given() as g:
+        results = []
+
+        @g.keysubscribe
+        def _(a=None, b=None):
+            results.append((a, b))
+
+        give(a=1, b=2)
+        give(a=3)
+        give(b=4)
+
+    assert results == [(1, 2), (3, None), (None, 4)]
+
+
+def test_inherit():
+    with given() as g:
+        g["a", "b"] >> (results := [])
+
+        with give.inherit(a=1):
+            give(b=2)
+            give(b=3)
+
+        assert results == [(1, 2), (1, 3)]
+
+
+def test_inherit_nested():
+    with given() as g:
+        g["a", "b"] >> (results := [])
+
+        with give.inherit(a=1):
+            with give.inherit(a=5, b=6):
+                give(b=2)
+                give(b=3)
+
+        assert results == [(5, 2), (5, 3)]
+
+
+def test_wrap():
+    with given() as g:
+
+        g.where("a")["a", "w"] >> (resultsaw := [])
+
+        resultsw = []
+
+        @g.wrap
+        def _(w):
+            resultsw.append(w)
+            yield
+            resultsw.append(-w)
+
+        with give.wrap(w=1):
+            give(a=10)
+            with give.wrap(w=2):
+                give(a=20)
+            give(a=30)
+
+        assert resultsaw == [(10, 1), (20, 2), (30, 1)]
+        assert resultsw == [1, 2, -2, -1]

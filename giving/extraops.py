@@ -1,10 +1,9 @@
 import builtins
-import types
 
 from rx import operators as rxop
 from rx.operators import NotSet
 
-from .utils import keyword_decorator
+from .utils import keyword_decorator, lax_function
 
 ###########
 # Reducer #
@@ -50,32 +49,6 @@ def reducer(func, default_seed=NotSet, postprocess=NotSet):
 
     _create.__name__ = name
     return _create
-
-
-#############
-# Utilities #
-#############
-
-
-def _modfn(fn):
-    if isinstance(fn, types.FunctionType):
-        KWVAR_FLAG = 8
-        co = fn.__code__
-        if not co.co_flags & KWVAR_FLAG:
-            newfn = types.FunctionType(
-                name=fn.__name__,
-                code=co.replace(
-                    co_flags=co.co_flags | KWVAR_FLAG,
-                    # Add a dummy keyword argument with an illegal name
-                    co_varnames=(*co.co_varnames, "#"),
-                ),
-                globals=fn.__globals__,
-            )
-            newfn.__defaults__ = fn.__defaults__
-            newfn.__kwdefaults__ = fn.__kwdefaults__
-            return newfn
-
-    return fn
 
 
 ##############################
@@ -296,7 +269,7 @@ def getitem(*names, strict=False):
 
 
 def keyfilter(fn=None):
-    fn = _modfn(fn)
+    fn = lax_function(fn)
     return rxop.filter(lambda kwargs: fn(**kwargs))
 
 
@@ -323,11 +296,11 @@ def keymap(_fn=None, **_kwargs):
         )
 
     elif _fn:
-        _fn = _modfn(_fn)
+        _fn = lax_function(_fn)
         return rxop.map(lambda kwargs: _fn(**kwargs))
 
     else:
-        fns = {k: _modfn(fn) for k, fn in _kwargs.items()}
+        fns = {k: lax_function(fn) for k, fn in _kwargs.items()}
         return rxop.map(lambda kwargs: {k: fn(**kwargs) for k, fn in fns.items()})
 
 

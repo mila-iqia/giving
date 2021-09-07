@@ -1,4 +1,5 @@
 import functools
+import types
 
 
 def keyword_decorator(deco):
@@ -17,3 +18,25 @@ def keyword_decorator(deco):
             return deco(fn, **kwargs)
 
     return new_deco
+
+
+def lax_function(fn):
+    if isinstance(fn, types.FunctionType):
+        KWVAR_FLAG = 8
+        co = fn.__code__
+        if not co.co_flags & KWVAR_FLAG:
+            newfn = types.FunctionType(
+                name=fn.__name__,
+                code=co.replace(
+                    co_flags=co.co_flags | KWVAR_FLAG,
+                    # Add a dummy keyword argument with an illegal name
+                    co_varnames=(*co.co_varnames, "#"),
+                ),
+                globals=fn.__globals__,
+                closure=fn.__closure__,
+            )
+            newfn.__defaults__ = fn.__defaults__
+            newfn.__kwdefaults__ = fn.__kwdefaults__
+            return newfn
+
+    return fn

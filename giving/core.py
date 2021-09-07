@@ -4,6 +4,7 @@ import time
 from collections import namedtuple
 from contextlib import contextmanager
 from contextvars import ContextVar
+from itertools import count
 from types import SimpleNamespace
 
 import rx
@@ -16,6 +17,7 @@ from .obs import ObservableProxy
 ABSENT = object()
 
 global_context = ContextVar("global_context", default=())
+global_inherited = ContextVar("global_inherited", default={})
 
 _block_classes = {
     ast.If: ("body", "orelse"),
@@ -35,6 +37,9 @@ _improper_nullary_give_error = (
 
 
 special_keys = {}
+
+
+global_count = count(0)
 
 
 def register_special(key):
@@ -146,11 +151,20 @@ def resolve(frame, func, args):
 
 
 class Giver:
-    def __init__(self, *, keys=None, special=[], extra={}, context=global_context):
+    def __init__(
+        self,
+        *,
+        keys=None,
+        special=[],
+        extra={},
+        context=global_context,
+        inherited=global_inherited,
+    ):
         self.keys = keys
         self.special = special
         self.extra = extra
         self.context = context
+        self.inherited = inherited
 
     @property
     def line(self):
@@ -159,6 +173,7 @@ class Giver:
             special=(*self.special, "$line"),
             extra=self.extra,
             context=self.context,
+            inherited=self.inherited,
         )
 
     @property
@@ -168,7 +183,32 @@ class Giver:
             special=(*self.special, "$time"),
             extra=self.extra,
             context=self.context,
+            inherited=self.inherited,
         )
+
+    @contextmanager
+    def inherit(self, **keys):
+        inh = self.inherited.get()
+        token = self.inherited.set({**inh, **keys})
+        try:
+            yield
+        finally:
+            self.inherited.reset(token)
+
+    @contextmanager
+    def wrap(self, **keys):
+        with self.wrap_no_inherit(**keys):
+            with self.inherit(**keys):
+                yield
+
+    @contextmanager
+    def wrap_no_inherit(self, **keys):
+        num = next(global_count)
+        self.produce({"$begin": num, **keys})
+        try:
+            yield
+        finally:
+            self.produce({"$end": num, **keys})
 
     def produce(self, values):
         for special in self.special:
@@ -176,6 +216,9 @@ class Giver:
 
         if self.extra:
             values = {**self.extra, **values}
+
+        if (inh := self.inherited.get()) is not None:
+            values = {**inh, **values}
 
         for handler in self.context.get():
             handler(values)

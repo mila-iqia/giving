@@ -63,8 +63,6 @@ def test_display_time(capsys):
 
 
 def test_display_word(capsys):
-    # From dict
-
     with given() as gv:
         gv.tag(group="cerise").display(colors=False)
 
@@ -74,8 +72,8 @@ def test_display_word(capsys):
     assert captured.out == "«cerise:quite» abc: 123\n"
     assert captured.err == ""
 
-    # From object
 
+def test_display_word_object(capsys):
     class XXX:
         def __str__(self):
             return "xxx"

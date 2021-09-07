@@ -1,6 +1,6 @@
 [flake8]
 ignore=E501,E203,W503,F722
-exclude=tests/walrus.py
+exclude=examples/mnist/main.py
 per-file-ignores=
   __init__.py:F401
   examples/*:F821

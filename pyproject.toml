@@ -28,3 +28,7 @@ known_third_party = ""
 multi_line_output = 3
 include_trailing_comma = true
 combine_as_imports = true
+skip = 'examples/mnist/main.py'
+
+[tool.black]
+exclude = 'examples/mnist/main.py'

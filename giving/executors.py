@@ -28,7 +28,8 @@ _path_replacements = {
 
 def format_libpath(path):
     for var, pfx in sorted(_path_replacements.items(), key=lambda kv: kv[1]):
-        if (val := os.environ.get(var, None)) is not None:
+        val = os.environ.get(var, None)
+        if val is not None:
             if not val.endswith("/"):
                 val += "/"
             if path.startswith(val):

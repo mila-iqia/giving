@@ -217,7 +217,8 @@ class Giver:
         if self.extra:
             values = {**self.extra, **values}
 
-        if (inh := self.inherited.get()) is not None:
+        inh = self.inherited.get()
+        if inh is not None:
             values = {**inh, **values}
 
         for handler in self.context.get():

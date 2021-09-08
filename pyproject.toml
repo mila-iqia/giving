@@ -6,7 +6,7 @@ authors = ["Olivier Breuleux <breuleux@gmail.com>"]
 license = "MIT"
 
 [tool.poetry.dependencies]
-python = "^3.8"
+python = "^3.6"
 Rx = "^3.2.0"
 varname = "^0.8.0"
 

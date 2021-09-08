@@ -32,7 +32,7 @@ def lax_function(fn):
                     co_varnames=(*co.co_varnames, "#"),
                 )
             else:  # pragma: no cover
-                return types.CodeType(
+                newco = types.CodeType(
                     co.co_argcount,
                     co.co_kwonlyargcount,
                     co.co_nlocals,

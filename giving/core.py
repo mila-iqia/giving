@@ -277,7 +277,6 @@ class Given:
         if isinstance(self.key, str):
             src = src.pipe(op.getitem(self.key))
 
-        src.subscribe(lambda _: None)
         return ObservableProxy(src)
 
     def __exit__(self, exc_type=None, exc=None, tb=None):

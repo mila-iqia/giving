@@ -13,6 +13,29 @@ def fraise(x):
     return a
 
 
+def things(*values):
+    for a in values:
+        give(a)
+
+
+def test_print(capsys):
+    with given() as gv:
+        gv["a"].print()
+        things(1, 2, 3)
+
+    captured = capsys.readouterr()
+    assert captured.out == "1\n2\n3\n"
+
+
+def test_print_format(capsys):
+    with given() as gv:
+        gv.print("a={a}")
+        things(1, 2, 3)
+
+    captured = capsys.readouterr()
+    assert captured.out == "a=1\na=2\na=3\n"
+
+
 def test_display(capsys):
     with given() as gv:
         gv.display()
@@ -47,7 +70,7 @@ def test_display_line(capsys):
         give.line(abc=123)
 
     captured = capsys.readouterr()
-    assert captured.out == "(tests/test_executors.py:47 test_display_line) abc: 123\n"
+    assert captured.out == "(tests/test_executors.py:70 test_display_line) abc: 123\n"
     assert captured.err == ""
 
 

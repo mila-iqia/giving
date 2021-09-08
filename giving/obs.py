@@ -205,6 +205,12 @@ class ObservableProxy:
     variance = _opmethod("variance", op.variance)
     where = _opmethod("where", op.where)
 
+    def print(self, format=None):
+        obs = self
+        if format is not None:
+            obs = self.format(format)
+        return obs.subscribe(print)
+
     def display(self, *, breakword=False, word=None, **kwargs):
         sub = self.subscribe(Displayer(**kwargs))
         if breakword:  # pragma: no cover

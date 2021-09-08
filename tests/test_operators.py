@@ -336,6 +336,7 @@ def test_where():
         results3 = accum(gv.pipe(op.where("x", y=True)))
         results4 = accum(gv.pipe(op.where(x=lambda x: x > 10)))
         results5 = accum(gv.pipe(op.where("!x")))
+        results6 = accum(gv.pipe(op.where(x=2, y=True)))
 
         varia()
 
@@ -344,6 +345,7 @@ def test_where():
     assert results3 == [d for d in everything if "x" in d and "y" in d and d["y"]]
     assert results4 == [d for d in everything if "x" in d and d["x"] > 10]
     assert results5 == [d for d in everything if "x" not in d]
+    assert results6 == [{"x": 2, "y": True}]
 
 
 def aggron(n):

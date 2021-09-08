@@ -521,7 +521,7 @@ def where(*keys, **conditions):
     from types import FunctionType
 
     conditions = {
-        k: cond if isinstance(cond, FunctionType) else lambda x: cond == x
+        k: cond if isinstance(cond, FunctionType) else lambda x, value=cond: value == x
         for k, cond in conditions.items()
     }
     excluded = [k.lstrip("!") for k in keys if k.startswith("!")]

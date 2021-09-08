@@ -25,13 +25,34 @@ def lax_function(fn):
         KWVAR_FLAG = 8
         co = fn.__code__
         if not co.co_flags & KWVAR_FLAG:
-            newfn = types.FunctionType(
-                name=fn.__name__,
-                code=co.replace(
+            if hasattr(co, "replace"):
+                newco = co.replace(
                     co_flags=co.co_flags | KWVAR_FLAG,
                     # Add a dummy keyword argument with an illegal name
                     co_varnames=(*co.co_varnames, "#"),
-                ),
+                )
+            else:  # pragma: no cover
+                return types.CodeType(
+                    co.co_argcount,
+                    co.co_kwonlyargcount,
+                    co.co_nlocals,
+                    co.co_stacksize,
+                    co.co_flags | KWVAR_FLAG,
+                    co.co_code,
+                    co.co_consts,
+                    co.co_names,
+                    (*co.co_varnames, "#"),
+                    co.co_filename,
+                    co.co_name,
+                    co.co_firstlineno,
+                    co.co_lnotab,
+                    co.co_freevars,
+                    co.co_cellvars,
+                )
+
+            newfn = types.FunctionType(
+                name=fn.__name__,
+                code=newco,
                 globals=fn.__globals__,
                 closure=fn.__closure__,
             )

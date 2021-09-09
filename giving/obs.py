@@ -208,8 +208,8 @@ class ObservableProxy:
     variance = _opmethod(op.variance)
     where = _opmethod(op.where)
 
-    def breakpoint(self):  # pragma: no cover
-        return self.subscribe(Breakpoint())
+    def breakpoint(self, **kwargs):  # pragma: no cover
+        return self.subscribe(Breakpoint(**kwargs))
 
     def breakword(self, **kwargs):  # pragma: no cover
         return self.subscribe(Breakpoint(use_breakword=True, **kwargs))

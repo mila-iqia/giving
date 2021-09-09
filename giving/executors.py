@@ -109,8 +109,10 @@ display = Displayer()
 
 
 class Breakpoint:  # pragma: no cover
-    def __init__(self, use_breakword=False, word=None):
+    def __init__(self, use_breakword=False, word=None, skip=[]):
         self.word = word
+        self.skip = ["giving.*", "rx.*", *skip]
+        self.bw = False
         if use_breakword:
             try:
                 import breakword as bw
@@ -130,6 +132,6 @@ class Breakpoint:  # pragma: no cover
 
         print("Breaking on", display.string(data))
         try:
-            breakpoint(skip=["giving.*", "rx.*"])
+            breakpoint(skip=self.skip)
         except TypeError:
-            pdb.Pdb(skip=["giving.*", "rx.*"]).set_trace()
+            pdb.Pdb(skip=self.skip).set_trace()

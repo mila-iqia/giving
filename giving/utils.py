@@ -27,15 +27,18 @@ def lax_function(fn):
         if not co.co_flags & KWVAR_FLAG:
             if hasattr(co, "replace"):
                 newco = co.replace(
+                    # Let's lie and pretend it has **kwargs
                     co_flags=co.co_flags | KWVAR_FLAG,
                     # Add a dummy keyword argument with an illegal name
                     co_varnames=(*co.co_varnames, "#"),
+                    # That dummy argument is a new local
+                    co_nlocals=co.co_nlocals + 1,
                 )
             else:  # pragma: no cover
                 newco = types.CodeType(
                     co.co_argcount,
                     co.co_kwonlyargcount,
-                    co.co_nlocals,
+                    co.co_nlocals + 1,
                     co.co_stacksize,
                     co.co_flags | KWVAR_FLAG,
                     co.co_code,

@@ -197,18 +197,18 @@ class Giver:
 
     @contextmanager
     def wrap(self, **keys):
-        with self.wrap_no_inherit(**keys):
-            with self.inherit(**keys):
-                yield
-
-    @contextmanager
-    def wrap_no_inherit(self, **keys):
         num = next(global_count)
         self.produce({"$begin": num, **keys})
         try:
             yield
         finally:
             self.produce({"$end": num, **keys})
+
+    @contextmanager
+    def wrap_inherit(self, **keys):
+        with self.wrap(**keys):
+            with self.inherit(**keys):
+                yield
 
     def produce(self, values):
         for special in self.special:

@@ -268,15 +268,40 @@ def getitem(*names, strict=False):
             )
 
 
-def keyfilter(fn=None):
+def kcombine():
+    def _combine(last, new):
+        return {**last, **new}
+
+    return rxop.scan(_combine)
+
+
+def keep(*keys, **remap):
+    """Keep certain dict keys and remap others.
+
+    Arguments:
+        keys: Keys that must be kept
+        remap: Keys that must be renamed
+    """
+    remap = {**{k: k for k in keys}, **remap}
+
+    def _filt(data):
+        return isinstance(data, dict) and any(k in remap for k in data.keys())
+
+    def _rekey(data):
+        return {remap[k]: v for k, v in data.items() if k in remap}
+
+    return rxop.pipe(rxop.filter(_filt), rxop.map(_rekey))
+
+
+def kfilter(fn):
     fn = lax_function(fn)
     return rxop.filter(lambda kwargs: fn(**kwargs))
 
 
-def keymap(_fn=None, **_kwargs):
+def kmap(_fn=None, **_kwargs):
     """Map a dict, passing keyword arguments.
 
-    keymap either takes a positional function argument or keyword arguments
+    kmap either takes a positional function argument or keyword arguments
     serving to build a new dict.
 
     Arguments:
@@ -292,7 +317,7 @@ def keymap(_fn=None, **_kwargs):
     """
     if _fn and _kwargs or not _fn and not _kwargs:
         raise TypeError(
-            "keymap either takes one argument or keyword arguments but not both"
+            "kmap either takes one argument or keyword arguments but not both"
         )
 
     elif _fn:
@@ -312,21 +337,6 @@ def min(last, new):
 @reducer
 def max(last, new):
     return builtins.max(last, new)
-
-
-def rekey(*keep, **remap):
-    """Keep certain dict keys and remap others.
-
-    Arguments:
-        keep: Keys that must be kept
-        remap: Keys that must be renamed
-    """
-    remap = {**{k: k for k in keep}, **remap}
-
-    def _rekey(data):
-        return {k2: data[k1] for k1, k2 in remap.items()}
-
-    return rxop.map(_rekey)
 
 
 def roll(n, reduce=None, seed=NotSet):  # noqa: F811

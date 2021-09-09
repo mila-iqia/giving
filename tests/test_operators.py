@@ -75,18 +75,18 @@ def test_format3():
         ]
 
 
-def test_keymap():
+def test_kmap():
     with given() as gv:
         results = []
-        gv.pipe(op.keymap(lambda b: -b)).subscribe(results.append)
+        gv.pipe(op.kmap(lambda b: -b)).subscribe(results.append)
         fib(5)
         assert results == [-1, -1, -2, -3, -5]
 
 
-def test_keymap2():
+def test_kmap2():
     with given() as gv:
         results = []
-        gv.keymap(x=lambda **kw: -kw["b"], y=lambda a: a * a) >> results
+        gv.kmap(x=lambda **kw: -kw["b"], y=lambda a: a * a) >> results
         fib(5)
         assert results == [
             {"x": -1, "y": 0},
@@ -97,15 +97,15 @@ def test_keymap2():
         ]
 
 
-def test_keymap_err():
+def test_kmap_err():
     with given() as gv:
         with pytest.raises(TypeError):
-            gv.keymap(lambda a: -a, b=lambda b: -b)
+            gv.kmap(lambda a: -a, b=lambda b: -b)
 
 
-def test_keyfilter():
+def test_kfilter():
     with given() as gv:
-        gv.keyfilter(lambda a: a > 0)["a"] >> (results := [])
+        gv.kfilter(lambda a: a > 0)["a"] >> (results := [])
 
         things(0, 1, -2, 3, -4, 5)
 
@@ -430,18 +430,33 @@ def test_as():
         assert results == [{"z": 1}, {"z": 2}]
 
 
-def test_rekey():
+def test_kcombine():
     with given() as gv:
-        gv.rekey(a="z") >> (results := [])
+        gv.kcombine() >> (results := [])
+
+        give(a=1)
+        give(b=2)
+        give(b=3, c=4)
+
+    assert results == [
+        {"a": 1},
+        {"a": 1, "b": 2},
+        {"a": 1, "b": 3, "c": 4},
+    ]
+
+
+def test_keep():
+    with given() as gv:
+        gv.keep(a="z") >> (results := [])
 
         things(1, 2)
 
         assert results == [{"z": 1}, {"z": 2}]
 
 
-def test_rekey_2():
+def test_keep_2():
     with given() as gv:
-        gv.rekey("b", c="d") >> (results := [])
+        gv.keep("b", c="d") >> (results := [])
 
         give(a=1, b=2, c=3)
         give(a=4, b=5, c=6)

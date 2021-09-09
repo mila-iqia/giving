@@ -1,3 +1,4 @@
+import inspect
 from contextlib import contextmanager
 
 from . import operators as op
@@ -194,9 +195,10 @@ class ObservableProxy:
     collect_between = _opmethod("collect_between", op.collect_between)
     format = _opmethod("format", op.format)
     getitem = _opmethod("getitem", op.getitem)
-    keyfilter = _opmethod("keyfilter", op.keyfilter)
-    keymap = _opmethod("keymap", op.keymap)
-    rekey = _opmethod("rekey", op.rekey)
+    kcombine = _opmethod("kcombine", op.kcombine)
+    keep = _opmethod("keep", op.keep)
+    kfilter = _opmethod("kfilter", op.kfilter)
+    kmap = _opmethod("kmap", op.kmap)
     roll = _opmethod("roll", op.roll)
     stream_once = _opmethod("stream_once", op.stream_once)
     tag = _opmethod("tag", op.tag)
@@ -239,24 +241,39 @@ class ObservableProxy:
 
         return self.subscribe(gv)
 
-    def keysubscribe(self, fn):
+    def ksubscribe(self, fn):
         fn = lax_function(fn)
         self.subscribe(lambda data: fn(**data))
 
-    def wrap(self, fn, begin="$begin", end="$end"):
-        fn = contextmanager(lax_function(fn))
+    def kwrap(self, fn, begin="$begin", end="$end"):
+        return self.wrap(fn, begin=begin, end=end, pass_keys=True)
+
+    def wrap(self, fn, begin="$begin", end="$end", pass_keys=False):
+        if pass_keys:
+            fn = lax_function(fn)
+
+        if inspect.isgeneratorfunction(fn):
+            fn = contextmanager(fn)
 
         managers = {}
 
         def watch(data):
             if begin in data:
                 key = data[begin]
-                assert key not in data
-                managers[key] = fn(**data)
-                managers[key].__enter__()
+                assert key not in managers
+                if hasattr(fn, "__enter__"):
+                    manager = fn
+                elif pass_keys:
+                    manager = fn(**data)
+                else:
+                    manager = fn()
+
+                managers[key] = manager
+                manager.__enter__()
 
             if end in data:
                 key = data[end]
                 managers[key].__exit__(None, None, None)
+                del managers[key]
 
         return self.subscribe(watch)

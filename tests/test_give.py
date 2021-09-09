@@ -236,11 +236,11 @@ def test_special_line():
     assert results == [LinePosition("test_special_line", __file__, lineno)]
 
 
-def test_keysubscribe():
+def test_ksubscribe():
     with given() as g:
         results = []
 
-        @g.keysubscribe
+        @g.ksubscribe
         def _(a=None, b=None):
             results.append((a, b))
 
@@ -281,11 +281,44 @@ def test_wrap():
 
         resultsw = []
 
-        @g.wrap
+        @g.kwrap
         def _(w):
             resultsw.append(w)
             yield
             resultsw.append(-w)
+
+        with give.wrap_inherit(w=1):
+            give(a=10)
+            with give.wrap(w=2):
+                give(a=20)
+            give(a=30)
+
+        assert resultsaw == [(10, 1), (20, 1), (30, 1)]
+        assert resultsw == [1, 2, -2, -1]
+
+
+def test_wrap2():
+    from contextlib import contextmanager
+
+    results = []
+
+    @contextmanager
+    def mng1():
+        results.append("(")
+        yield
+        results.append(")")
+
+    @contextmanager
+    def mng2():
+        results.append("<")
+        yield
+        results.append(">")
+
+    with given() as g:
+
+        g.where(w=1).wrap(mng1())
+        g.where(w=2).wrap(mng2)
+        g["?a"] >> results
 
         with give.wrap(w=1):
             give(a=10)
@@ -293,5 +326,4 @@ def test_wrap():
                 give(a=20)
             give(a=30)
 
-        assert resultsaw == [(10, 1), (20, 2), (30, 1)]
-        assert resultsw == [1, 2, -2, -1]
+    assert results == ["(", 10, "<", 20, ">", 30, ")"]

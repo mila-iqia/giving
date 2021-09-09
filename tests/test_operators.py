@@ -36,6 +36,14 @@ def test_getitem2():
         assert results == [(0, 1), (1, 1), (1, 2), (2, 3), (3, 5)]
 
 
+def test_getitem_tuple():
+    with given() as gv:
+        gv.kmap(lambda a: (a, a * a))[1] >> (results := [])
+
+        things(1, 2, 3)
+        assert results == [1, 4, 9]
+
+
 def test_getitem_strict():
     with given() as gv:
         results = []

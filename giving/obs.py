@@ -43,8 +43,8 @@ class ObservableProxy:
     def __getitem__(self, item):
         if not isinstance(item, tuple):
             item = (item,)
-        strict = not any("?" in x for x in item)
-        item = [x.lstrip("?") for x in item]
+        strict = not any("?" in x for x in item if isinstance(x, str))
+        item = [x.lstrip("?") if isinstance(x, str) else x for x in item]
         return self.getitem(*item, strict=strict)
 
     #######################

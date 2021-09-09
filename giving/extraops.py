@@ -451,13 +451,67 @@ def kmap(_fn=None, **_kwargs):
 
 
 @reducer
-def min(last, new):
-    return builtins.min(last, new)
+class min:
+    """Produce the minimum of a stream of values.
+
+    .. marble::
+        :alt: minimum
+
+        --3--2--7--6-|
+        [     min()    ]
+        -------------2-|
+
+    Arguments:
+        key: A key mapping function.
+        comparer: A function of two elements that returns -1 if the first is smaller
+            than the second, 0 if they are equal, 1 if the second is larger.
+        scan: If True, generate the current minimum on every element.
+        seed: First element of the reduction.
+    """
+
+    def __init__(self, key=None, comparer=None):
+        self.comparer = comparer or operator.gt
+        self.key = key or (lambda x: x)
+
+    def reduce(self, last, new):
+        lastc = self.key(last)
+        newc = self.key(new)
+        if self.comparer(lastc, newc) <= 0:
+            return last
+        else:
+            return new
 
 
 @reducer
-def max(last, new):
-    return builtins.max(last, new)
+class max:
+    """Produce the maximum of a stream of values.
+
+    .. marble::
+        :alt: maximum
+
+        --3--2--7--6-|
+        [     max()    ]
+        -------------7-|
+
+    Arguments:
+        key: A key mapping function.
+        comparer: A function of two elements that returns -1 if the first is smaller
+            than the second, 0 if they are equal, 1 if the second is larger.
+        scan: If True, generate the current maximum on every element.
+        seed: First element of the reduction.
+    """
+
+    def __init__(self, key=None, comparer=None):
+        self.comparer = comparer or operator.gt
+        self.key = key or (lambda x: x)
+
+    def reduce(self, last, new):
+        lastc = self.key(last)
+        newc = self.key(new)
+        if self.comparer(lastc, newc) > 0:
+            return last
+        else:
+            return new
 
 
 def roll(n, reduce=None, seed=NotSet):  # noqa: F811

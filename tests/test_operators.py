@@ -302,6 +302,50 @@ def test_max():
     assert results == [21]
 
 
+def test_min_cmp():
+    values = [1, 3, -4, 21, -8, -30]
+
+    with given() as gv:
+        gv["a"].min(comparer=lambda x, y: abs(x) - abs(y)) >> (results := [])
+
+        things(*values)
+
+    assert results == [1]
+
+
+def test_max_cmp():
+    values = [1, 3, -4, 21, -8, -30]
+
+    with given() as gv:
+        gv["a"].max(comparer=lambda x, y: abs(x) - abs(y)) >> (results := [])
+
+        things(*values)
+
+    assert results == [-30]
+
+
+def test_min_key():
+    values = [1, 3, -4, 21, -8, -30]
+
+    with given() as gv:
+        gv["a"].min(key=abs) >> (results := [])
+
+        things(*values)
+
+    assert results == [1]
+
+
+def test_max_key():
+    values = [1, 3, -4, 21, -8, -30]
+
+    with given() as gv:
+        gv["a"].max(key=abs) >> (results := [])
+
+        things(*values)
+
+    assert results == [-30]
+
+
 def test_sum():
     values = [1, 3, -4, 21, -8, -17]
 

@@ -43,6 +43,24 @@ global_count = count(0)
 
 
 def register_special(key):
+    """Return a decorator to register a function for a special key.
+
+    The function is called with no arguments whenever the special key is
+    requested, e.g. with ``Giver(special=["$specialkey"])``.
+
+    Use ``sys._getframe(3)`` to get the frame in which give() was called.
+
+    Example:
+        .. code-block:: python
+
+            @register_special("$time")
+            def _special_time():
+                return time.time()
+
+    Arguments:
+        key: The key, conventionally starting with a "$".
+    """
+
     def deco(func):
         special_keys[key] = func
         return func
@@ -125,9 +143,14 @@ def _find_above(frame):
 def resolve(frame, func, args):
     """Return a {variable_name: value} dictionary depending on usage.
 
-    * (len(args) == 0) => Use the variable assigned in the line before the call.
-    * (len(args) == 1) => Use the variable the call is assigned to.
-    * (len(args) >= 1) => Use the variables passed as arguments to the call.
+    * ``len(args) == 0`` => Use the variable assigned in the line before the call.
+    * ``len(args) == 1`` => Use the variable the call is assigned to.
+    * ``len(args) >= 1`` => Use the variables passed as arguments to the call.
+
+    Arguments:
+        frame: The number of frames to go up to find the context.
+        func: The Giver object that was called.
+        args: The arguments given to the Giver.
     """
     nargs = len(args)
 

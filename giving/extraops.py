@@ -1,4 +1,5 @@
 import builtins
+import operator
 
 from rx import operators as rxop
 from rx.operators import NotSet
@@ -48,6 +49,7 @@ def reducer(func, default_seed=NotSet, postprocess=NotSet):
         return oper
 
     _create.__name__ = name
+    _create.__doc__ = func.__doc__
     return _create
 
 
@@ -60,13 +62,24 @@ def affix(**streams):
     """Augment a stream of dicts with extra keys.
 
     The affixed streams should have the same length as the main one, so when
-    affixing a reduction, one should set scan=True, or the roll option.
+    affixing a reduction, one should set ``scan=True``, or ``scan=n``.
+
+    .. marble::
+        :alt: affix
+
+         ---a1---------a2-----------a3-------|
+        x----4-----------5---------6---------|
+        y-----7--------8----------9----------|
+        [           affix(b=x, c=y)          ]
+         -----a1,b4,c7---a2,b5,c8---a3,b6,c9-|
 
     Example:
-        obs.affix(
-            minx=obs["x"].min(scan=True),
-            xpy=obs["x", "y"].starmap(lambda x, y: x + y),
-        )
+        .. code-block:: python
+
+            obs.where("x", "y").affix(
+                minx=obs["x"].min(scan=True),
+                xpy=obs["x", "y"].starmap(lambda x, y: x + y),
+            )
 
     Arguments:
         streams: A mapping from extra keys to add to the dicts to Observables
@@ -86,13 +99,52 @@ def affix(**streams):
 def as_(key):
     """Make a stream of dictionaries using the given key.
 
-    For example, [1, 2].as_("x") => [{"x": 1}, {"x": 2}]
+    For example, ``[1, 2].as_("x")`` => ``[{"x": 1}, {"x": 2}]``
+
+    .. marble::
+        :alt: as_
+
+        --1---2---3--|
+        [   as_(x)   ]
+        --x1--x2--x3-|
+
+    Arguments:
+        key: Key under which to generate each element of the stream.
     """
     return rxop.map(lambda x: {key: x})
 
 
 @reducer(default_seed=(0, 0), postprocess=rxop.starmap(lambda x, sz: x / sz))
 class average:
+    """Produce the average of a stream of values.
+
+    .. marble::
+        :alt: average
+
+        --1--3--5-|
+        [ average() ]
+        ----------3-|
+
+    .. marble::
+        :alt: average2
+
+        ----1----3----5------|
+        [ average(scan=True) ]
+        ----1----2----3------|
+
+    .. marble::
+        :alt: average3
+
+        ----1----3----5---|
+        [ average(scan=2) ]
+        ----1----2----4---|
+
+    Arguments:
+        scan: If True, generate the current average on every element. If a number *n*,
+            generate the average on the last *n* elements.
+        seed: First element of the reduction.
+    """
+
     def reduce(self, last, add):
         x, sz = last
         return (x + add, sz + 1)
@@ -119,6 +171,17 @@ def _average_and_variance_postprocess(sm, v2, sz):
     postprocess=rxop.starmap(_average_and_variance_postprocess),
 )
 class average_and_variance:
+    """Produce the average and variance of a stream of values.
+
+    .. note::
+
+        The variance for the first element is always None.
+
+    Arguments:
+        scan: If True, generate the current average+variance on every element.
+            If a number *n*, generate the average+variance on the last *n* elements.
+    """
+
     def reduce(self, last, add):
         prev_sum, prev_v2, prev_size = last
         new_size = prev_size + 1
@@ -151,13 +214,15 @@ def collect_between(start, end, common=None):
     """Collect all data between the start and end keys.
 
     Example:
-        with given() as gv:
-            gv.collect_between("A", "Z") >> (results := [])
-            give(A=1)
-            give(B=2)
-            give(C=3, D=4, A=5)
-            give(Z=6)
-            assert results == [{"A": 5, "B": 2, "C": 3, "D": 4, "Z": 6}]
+        .. code-block:: python
+
+            with given() as gv:
+                gv.collect_between("A", "Z") >> (results := [])
+                give(A=1)
+                give(B=2)
+                give(C=3, D=4, A=5)
+                give(Z=6)
+                assert results == [{"A": 5, "B": 2, "C": 3, "D": 4, "Z": 6}]
 
     Arguments:
         start: The key that marks the beginning of the accumulation.
@@ -239,36 +304,53 @@ def format(string):
     return rxop.map(_fmt)
 
 
-def getitem(*names, strict=False):
-    """Extract a key from a dictionary.
+def getitem(*keys, strict=False):
+    """Extract one or more keys from a dictionary.
+
+    If more than one key is given, a stream of tuples is produced.
+
+    .. marble::
+        :alt: getitem
+
+        --x1--x2--x3-|
+        [ getitem(x) ]
+        --1---2---3--|
 
     Arguments:
-        name: Name of the key to index with.
+        keys: Names of the keys to index with.
         strict: If true, every element in the stream is required to
             contains this key.
     """
-    import operator
-
-    if len(names) == 1:
-        (name,) = names
+    if len(keys) == 1:
+        (key,) = keys
         if strict:
-            return rxop.map(operator.itemgetter(name))
+            return rxop.map(operator.itemgetter(key))
         else:
             return rxop.pipe(
-                rxop.filter(lambda arg: name in arg),
-                rxop.map(operator.itemgetter(name)),
+                rxop.filter(lambda arg: key in arg),
+                rxop.map(operator.itemgetter(key)),
             )
     else:
         if strict:
-            return rxop.map(lambda arg: tuple(arg[name] for name in names))
+            return rxop.map(lambda arg: tuple(arg[key] for key in keys))
         else:
             return rxop.pipe(
-                rxop.filter(lambda arg: builtins.all(name in arg for name in names)),
-                rxop.map(lambda arg: tuple(arg[name] for name in names)),
+                rxop.filter(lambda arg: builtins.all(key in arg for key in keys)),
+                rxop.map(lambda arg: tuple(arg[key] for key in keys)),
             )
 
 
 def kcombine():
+    """Incrementally merge the dictionaries in the stream.
+
+    .. marble::
+        :alt: kcombine
+
+        --x1--y2-----x3-----z4-------|
+        [         kcombine()         ]
+        --x1--x1,y2--x3,y2--x3,y2,z4-|
+    """
+
     def _combine(last, new):
         return {**last, **new}
 
@@ -277,6 +359,13 @@ def kcombine():
 
 def keep(*keys, **remap):
     """Keep certain dict keys and remap others.
+
+    .. marble::
+        :alt: keep
+
+        --x1,z2--y3--z4--|
+        [   keep(x, y)   ]
+        --x1-----y3------|
 
     Arguments:
         keys: Keys that must be kept
@@ -294,6 +383,26 @@ def keep(*keys, **remap):
 
 
 def kfilter(fn):
+    """Filter a stream of dictionaries.
+
+    Example:
+
+        .. code-block:: python
+
+            # [{"x": 1, "y": 2}, {"x": 100, "y": 50}] => [{"x": 100, "y": 50}]
+            gv.kfilter(lambda x, y: x > y)
+
+    Arguments:
+        fn: A function that will be called for each element, passing the
+            element using ``**kwargs``.
+
+            .. note::
+
+                If the dict has elements that are not in the function's
+                arguments list and the function does not have a ``**kwargs``
+                argument, these elements will be dropped and no error will
+                occur.
+    """
     fn = lax_function(fn)
     return rxop.filter(lambda kwargs: fn(**kwargs))
 
@@ -301,17 +410,29 @@ def kfilter(fn):
 def kmap(_fn=None, **_kwargs):
     """Map a dict, passing keyword arguments.
 
-    kmap either takes a positional function argument or keyword arguments
+    ``kmap`` either takes a positional function argument or keyword arguments
     serving to build a new dict.
+
+    Example:
+
+        .. code-block:: python
+
+            # [{"x": 1, "y": 2}] => [3]
+            gv.kmap(lambda x, y: x + y)
+
+            # [{"x": 1, "y": 2}] => [{"x": 1, "y": 2, "z": 3}]
+            gv.kmap(z=lambda x, y: x + y)
 
     Arguments:
         _fn: A function that will be called for each element, passing the
-            element using **kwargs.
+            element using ``**kwargs``.
 
-            Note: If the dict has elements that are not in the function's
-            arguments list and the function does not have a **kwargs
-            argument, these elements will be dropped and no error will
-            occur.
+            .. note::
+
+                If the dict has elements that are not in the function's
+                arguments list and the function does not have a ``**kwargs``
+                argument, these elements will be dropped and no error will
+                occur.
         _kwargs: Alternatively, build a new dict with each key associated to
             a function with the same interface as fn.
     """
@@ -342,23 +463,34 @@ def max(last, new):
 def roll(n, reduce=None, seed=NotSet):  # noqa: F811
     """Group the last n elements, giving a sequence of overlapping sequences.
 
-    This can be used to compute a rolling average of the 100 last element:
+    For example, this can be used to compute a rolling average of the 100 last
+    elements (however, ``average(scan=100)`` is better optimized).
+
+    .. code-block:: python
+
         op.roll(100, lambda xs: sum(xs) / len(xs))
+
+    .. marble::
+        :alt: roll
+
+        --1--2--3---4---5---6---|
+        [         roll(3)       ]
+        --1--12-123-234-345-456-|
 
     Arguments:
         n: The number of elements to group together.
         reduce: A function to reduce the group.
 
-            It should take four arguments:
-                last: The last result.
-                add: The element that was just added. It is the last element
+            It should take five arguments:
+                * last: The last result.
+                * add: The element that was just added. It is the last element
                     in the elements list.
-                drop: The element that was dropped to make room for the
+                * drop: The element that was dropped to make room for the
                     added one. It is *not* in the elements argument.
                     If the list of elements is not yet of size n, there is
                     no need to drop anything and drop is None.
-                last_size: The window size on the last invocation.
-                current_size: The window size on this invocation.
+                * last_size: The window size on the last invocation.
+                * current_size: The window size on this invocation.
 
             Defaults to returning the deque of elements directly. The same
             reference is returned each time in order to save memory, so it
@@ -440,19 +572,21 @@ def sum(last, new):
 def tag(group="", field="$word", group_field="$group"):
     """Tag each dict or object with a unique word.
 
-    If the item is a dict, do `item[field] = <new_word>`, otherwise
-    attempt to do `setattr(item, field, <new_word>)`.
+    If the item is a dict, do ``item[field] = <new_word>``, otherwise
+    attempt to do ``setattr(item, field, <new_word>)``.
 
-    These tags are displayed specially by the `display` method and they
-    can be used to determine breakpoints with the `breakword` method.
+    These tags are displayed specially by the
+    :meth:`~giving.obs.ObservableProxy.display` method and they
+    can be used to determine breakpoints with the
+    :meth:`~giving.obs.ObservableProxy.breakword` method.
 
     Arguments:
         group: An arbitrary group name that corresponds to an independent
             sequence of words. It determines the color in display.
         field: The field name in which to put the word
-            (default: `$word`).
+            (default: ``$word``).
         group_field: The field name in which to put the group
-            (default: `$group`).
+            (default: ``$group``).
     """
     try:
         import breakword as bw
@@ -486,6 +620,14 @@ def unique():
     Be aware that this keeps a set of all the elements seen so far,
     so it may prevent them from being reclaimed by garbage collection
     and can be expensive in memory.
+
+    .. marble::
+        :alt: unique
+
+        -1-3-1-2-2-5-|
+        [  unique()  ]
+        -1-3---2---5-|
+
     """
     import rx
 
@@ -519,8 +661,24 @@ def variance(*args, **kwargs):
 def where(*keys, **conditions):
     """Filter entries with the given keys meeting the given conditions.
 
+    .. marble::
+        :alt: where
+
+        ---a1--b2--c3--|
+        [  where(b=2)  ]
+        -------b2------|
+
+    .. marble::
+        :alt: where2
+
+        ---a1--b2--a3--|
+        [   where(a)   ]
+        ---a1------a3--|
+
     Example:
-        where("x", "!y", z=True, w=lambda x: x > 0)
+        .. code-block:: python
+
+            where("x", "!y", z=True, w=lambda x: x > 0)
 
     Arguments:
         keys: Keys that must be present in the dictionary or, if a key starts

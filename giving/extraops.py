@@ -1,6 +1,9 @@
 import builtins
 import operator
+from collections import deque
+from types import FunctionType
 
+import rx
 from rx import operators as rxop
 from rx.operators import NotSet
 
@@ -230,7 +233,6 @@ def collect_between(start, end, common=None):
         common: A key that must be present in all data and must have
             the same value in the whole group.
     """
-    import rx
 
     def aggro(source):
         def subscribe(obs, scheduler=None):
@@ -551,9 +553,6 @@ def roll(n, reduce=None, seed=NotSet):  # noqa: F811
             should be processed immediately.
         seed: The first element of the reduction.
     """
-
-    from collections import deque
-
     q = deque(maxlen=n)
 
     if reduce is not None:
@@ -590,8 +589,6 @@ def stream_once():
     Use this if upstream operators have side effects, otherwise each
     downstream subscription will re-run the effects.
     """
-
-    import rx
 
     def go(source):
         observers = []
@@ -683,7 +680,6 @@ def unique():
         -1-3---2---5-|
 
     """
-    import rx
 
     def oper(source):
         def subscribe(obv, scheduler=None):
@@ -740,8 +736,6 @@ def where(*keys, **conditions):
         conditions: Maps a key to the value it must be associated to in the
             dictionary, or to a predicate function on the value.
     """
-    from types import FunctionType
-
     conditions = {
         k: cond if isinstance(cond, FunctionType) else lambda x, value=cond: value == x
         for k, cond in conditions.items()

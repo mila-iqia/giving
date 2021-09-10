@@ -38,7 +38,7 @@ def test_getitem2():
 
 def test_getitem_tuple():
     with given() as gv:
-        gv.kmap(lambda a: (a, a * a))[1] >> (results := [])
+        results = gv.kmap(lambda a: (a, a * a))[1].accum()
 
         things(1, 2, 3)
         assert results == [1, 4, 9]
@@ -93,8 +93,7 @@ def test_kmap():
 
 def test_kmap2():
     with given() as gv:
-        results = []
-        gv.kmap(x=lambda **kw: -kw["b"], y=lambda a: a * a) >> results
+        results = gv.kmap(x=lambda **kw: -kw["b"], y=lambda a: a * a).accum()
         fib(5)
         assert results == [
             {"x": -1, "y": 0},
@@ -113,7 +112,7 @@ def test_kmap_err():
 
 def test_kfilter():
     with given() as gv:
-        gv.kfilter(lambda a: a > 0)["a"] >> (results := [])
+        results = gv.kfilter(lambda a: a > 0)["a"].accum()
 
         things(0, 1, -2, 3, -4, 5)
 
@@ -122,12 +121,7 @@ def test_kfilter():
 
 def test_roll():
     with given() as gv:
-        results = []
-        gv.pipe(
-            op.getitem("b"),
-            op.roll(3),
-            op.map(list),
-        ).subscribe(results.append)
+        results = gv["b"].roll(3).map(list).accum()
         fib(5)
         assert results == [[1], [1, 1], [1, 1, 2], [1, 2, 3], [2, 3, 5]]
 
@@ -284,7 +278,7 @@ def test_min():
     values = [1, 3, -4, 21, -8, -13]
 
     with given() as gv:
-        gv["a"].min() >> (results := [])
+        results = gv["a"].min().accum()
 
         things(*values)
 
@@ -295,7 +289,7 @@ def test_max():
     values = [1, 3, -4, 21, -8, -13]
 
     with given() as gv:
-        gv["a"].max() >> (results := [])
+        results = gv["a"].max().accum()
 
         things(*values)
 
@@ -306,7 +300,7 @@ def test_min_cmp():
     values = [1, 3, -4, 21, -8, -30]
 
     with given() as gv:
-        gv["a"].min(comparer=lambda x, y: abs(x) - abs(y)) >> (results := [])
+        results = gv["a"].min(comparer=lambda x, y: abs(x) - abs(y)).accum()
 
         things(*values)
 
@@ -317,7 +311,7 @@ def test_max_cmp():
     values = [1, 3, -4, 21, -8, -30]
 
     with given() as gv:
-        gv["a"].max(comparer=lambda x, y: abs(x) - abs(y)) >> (results := [])
+        results = gv["a"].max(comparer=lambda x, y: abs(x) - abs(y)).accum()
 
         things(*values)
 
@@ -328,7 +322,7 @@ def test_min_key():
     values = [1, 3, -4, 21, -8, -30]
 
     with given() as gv:
-        gv["a"].min(key=abs) >> (results := [])
+        results = gv["a"].min(key=abs).accum()
 
         things(*values)
 
@@ -339,7 +333,7 @@ def test_max_key():
     values = [1, 3, -4, 21, -8, -30]
 
     with given() as gv:
-        gv["a"].max(key=abs) >> (results := [])
+        results = gv["a"].max(key=abs).accum()
 
         things(*values)
 
@@ -350,7 +344,7 @@ def test_sum():
     values = [1, 3, -4, 21, -8, -17]
 
     with given() as gv:
-        gv["a"].sum() >> (results := [])
+        results = gv["a"].sum().accum()
 
         things(*values)
 
@@ -402,8 +396,8 @@ def test_where():
 
 def test_where_any():
     with given() as gv:
-        gv >> (everything := [])
-        gv.where_any("x", "z") >> (results := [])
+        everything = gv.accum()
+        results = gv.where_any("x", "z").accum()
 
         varia()
 
@@ -420,7 +414,7 @@ def aggron(n):
 
 def test_collect_between():
     with given() as gv:
-        gv.pipe(op.collect_between("start", "end")) >> (results := [])
+        results = gv.pipe(op.collect_between("start", "end")).accum()
 
         aggron(3)
 
@@ -445,7 +439,7 @@ def fact(n):
 
 def test_collect_between2():
     with given() as gv:
-        gv.pipe(op.collect_between("begin", "value", common="n")) >> (results := [])
+        results = gv.pipe(op.collect_between("begin", "value", common="n")).accum()
 
         fact(6)
 
@@ -463,8 +457,8 @@ def test_collect_between2():
 
 def test_unique():
     with given() as gv:
-        gv["?a"] >> (result_set := set())
-        gv.unique()["?a"] >> (result_list := [])
+        result_set = gv["?a"].accum(set())
+        result_list = gv.unique()["?a"].accum()
 
         things(1, 2, 3, 1, 4, 5, 5, 1)
         give(b=10)
@@ -474,8 +468,8 @@ def test_unique():
 
 def test_unique2():
     with given() as gv:
-        gv["?a"] >> (result_set := set())
-        gv["?a"].unique() >> (result_list := [])
+        result_set = gv["?a"].accum(set())
+        result_list = gv["?a"].unique().accum()
 
         things(1, 2, 3, 1, 4, 5, 5, 1)
         give(b=10)
@@ -485,7 +479,7 @@ def test_unique2():
 
 def test_as():
     with given() as gv:
-        gv["a"].as_("z") >> (results := [])
+        results = gv["a"].as_("z").accum()
 
         things(1, 2)
 
@@ -494,7 +488,7 @@ def test_as():
 
 def test_kcombine():
     with given() as gv:
-        gv.kcombine() >> (results := [])
+        results = gv.kcombine().accum()
 
         give(a=1)
         give(b=2)
@@ -509,7 +503,7 @@ def test_kcombine():
 
 def test_keep():
     with given() as gv:
-        gv.keep(a="z") >> (results := [])
+        results = gv.keep(a="z").accum()
 
         things(1, 2)
 
@@ -518,7 +512,7 @@ def test_keep():
 
 def test_keep_2():
     with given() as gv:
-        gv.keep("b", c="d") >> (results := [])
+        results = gv.keep("b", c="d").accum()
 
         give(a=1, b=2, c=3)
         give(a=4, b=5, c=6)
@@ -528,7 +522,7 @@ def test_keep_2():
 
 def test_tag():
     with given() as gv:
-        gv.tag(group="anemone") >> (results := [])
+        results = gv.tag(group="anemone").accum()
 
         things(1, 2, 3)
 
@@ -544,7 +538,7 @@ def test_tag2():
         pass
 
     with given() as gv:
-        gv["a"].tag(group="gargamel", field="wrrd") >> (results := [])
+        results = gv["a"].tag(group="gargamel", field="wrrd").accum()
 
         things(X(), X())
 

@@ -81,6 +81,29 @@ class ObservableProxy:
     # Extra utilities #
     ###################
 
+    def accum(self, obj=None):
+        """Accumulate into a list or set.
+
+        Arguments:
+            obj: The object in which to accumulate, either a list or
+                a set. If not provided, a new list is created.
+
+        Returns:
+            The object in which the values will be accumulated.
+        """
+        if obj is None:
+            obj = []
+            method = obj.append
+        elif isinstance(obj, list):
+            method = obj.append
+        elif isinstance(obj, set):
+            method = obj.add
+        else:
+            raise TypeError("Argument to accum must be a list or set.")
+
+        self.subscribe(method)
+        return obj
+
     def breakpoint(self, **kwargs):  # pragma: no cover
         return self.subscribe(Breakpoint(**kwargs))
 

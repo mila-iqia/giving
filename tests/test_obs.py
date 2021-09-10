@@ -45,11 +45,11 @@ def test_proxy_dicts_strict():
 
 def test_give_method():
     with given() as gv:
-        gv["?z1"] >> (results1 := [])
-        gv["?z2"] >> (results2 := [])
-        gv.where(q=True)["z3"] >> (results3 := [])
-        gv["?z4"] >> (results4 := [])
-        gv["?z5"] >> (results5 := [])
+        results1 = gv["?z1"].accum()
+        results2 = gv["?z2"].accum()
+        results3 = gv.where(q=True)["z3"].accum()
+        results4 = gv["?z4"].accum()
+        results5 = gv["?z5"].accum()
 
         gv["?a"].map(lambda x: x + 1).as_("z1").give()
         gv["?a"].map(lambda x: x + 1).give("z2")
@@ -61,3 +61,35 @@ def test_give_method():
         assert results1 == results2 == results3 == [2, 3, 4]
         assert results4 == [3, 4, 5]
         assert results5 == [4, 5, 6]
+
+
+def test_rshift():
+    results1 = []
+    results2 = []
+    results3 = set()
+
+    with given() as gv:
+        gv["a"] >> results1
+        gv["a"] >> (lambda x: results2.insert(0, x))
+        gv["a"] >> results3
+
+        things(11, 22, 11, 33)
+
+    assert results1 == [11, 22, 11, 33]
+    assert results2 == [33, 11, 22, 11]
+    assert results3 == {11, 22, 33}
+
+
+def test_accum():
+    with given() as gv:
+        results1 = gv["a"].accum()
+        results2 = gv["a"].accum([55])
+        results3 = gv["a"].accum(set())
+        with pytest.raises(TypeError):
+            gv["a"].accum(())
+
+        things(11, 22, 11, 33)
+
+    assert results1 == [11, 22, 11, 33]
+    assert results2 == [55, 11, 22, 11, 33]
+    assert results3 == {11, 22, 33}

@@ -149,7 +149,7 @@ def test_giver():
     giv = giver("x")
 
     with given() as g:
-        g >> (results := [])
+        results = g.accum()
 
         giv(1)
         giv(2, y=3)
@@ -167,7 +167,7 @@ def test_giver_2():
     giv = giver("x", "y")
 
     with given() as g:
-        g >> (results := [])
+        results = g.accum()
 
         giv(1, 2)
         giv(3, 4)
@@ -190,7 +190,7 @@ def test_giver_special():
     giv = giver("$test")
 
     with given() as g:
-        g >> (results := [])
+        results = g.accum()
 
         a = 3  # noqa: F841
         giv()
@@ -205,7 +205,7 @@ def test_special_time():
     t = int(time.time())
 
     with given() as g:
-        g["$time"].map(int) >> (results := [])
+        results = g["$time"].map(int).accum()
 
         give.time(a=4)
 
@@ -216,7 +216,7 @@ def test_special_frame():
     giv = giver("$frame")
 
     with given() as g:
-        g["$frame"] >> (results := [])
+        results = g["$frame"].accum()
 
         giv(a=4)
 
@@ -229,7 +229,7 @@ def test_special_line():
     lineno = test_special_line.__code__.co_firstlineno + 7
 
     with given() as g:
-        g["$line"] >> (results := [])
+        results = g["$line"].accum()
 
         give.line(a=4)
 
@@ -253,7 +253,7 @@ def test_ksubscribe():
 
 def test_inherit():
     with given() as g:
-        g["a", "b"] >> (results := [])
+        results = g["a", "b"].accum()
 
         with give.inherit(a=1):
             give(b=2)
@@ -264,7 +264,7 @@ def test_inherit():
 
 def test_inherit_nested():
     with given() as g:
-        g["a", "b"] >> (results := [])
+        results = g["a", "b"].accum()
 
         with give.inherit(a=1):
             with give.inherit(a=5, b=6):
@@ -277,7 +277,7 @@ def test_inherit_nested():
 def test_wrap():
     with given() as g:
 
-        g.where("a")["a", "w"] >> (resultsaw := [])
+        resultsaw = g.where("a")["a", "w"].accum()
 
         resultsw = []
 

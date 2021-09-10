@@ -10,5 +10,6 @@ from .core import (
     register_special,
     resolve,
 )
-from .obs import ObservableProxy, prox
+from .extraops import reducer
+from .obs import ObservableProxy
 from .version import version

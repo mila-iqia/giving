@@ -1,3 +1,5 @@
+"""Extra operators for giving."""
+
 import builtins
 import operator
 from collections import deque
@@ -7,58 +9,78 @@ import rx
 from rx import operators as rxop
 from rx.operators import NotSet
 
-from .utils import keyword_decorator, lax_function
-
-###########
-# Reducer #
-###########
+from .utils import lax_function, reducer
 
 
-class _Reducer:
-    def __init__(self, reduce, roll):
-        self.reduce = reduce
-        self.roll = roll
+def roll(n, reduce=None, seed=NotSet):  # noqa: F811
+    """Group the last n elements, giving a sequence of overlapping sequences.
 
+    For example, this can be used to compute a rolling average of the 100 last
+    elements (however, ``average(scan=100)`` is better optimized).
 
-@keyword_decorator
-def reducer(func, default_seed=NotSet, postprocess=NotSet):
-    name = func.__name__
-    if isinstance(func, type):
-        constructor = func
+    .. code-block:: python
+
+        op.roll(100, lambda xs: sum(xs) / len(xs))
+
+    .. marble::
+        :alt: roll
+
+        --1--2--3---4---5---6---|
+        [         roll(3)       ]
+        --1--12-123-234-345-456-|
+
+    Arguments:
+        n: The number of elements to group together.
+        reduce: A function to reduce the group.
+
+            It should take five arguments:
+
+                * **last**: The last result.
+                * **add**: The element that was just added. It is the last element
+                  in the elements list.
+                * **drop**:
+                  The element that was dropped to make room for the
+                  added one. It is *not* in the elements argument.
+                  If the list of elements is not yet of size n, there is
+                  no need to drop anything and drop is None.
+                * **last_size**: The window size on the last invocation.
+                * **current_size**: The window size on this invocation.
+
+            Defaults to returning the deque of elements directly.
+
+            .. note::
+                The same reference is returned each time in order to save memory, so it
+                should be processed immediately.
+        seed: The first element of the reduction.
+    """
+    q = deque(maxlen=n)
+
+    if reduce is not None:
+
+        def queue(current, x):
+            drop = q[0] if len(q) == n else NotSet
+            last_size = len(q)
+            q.append(x)
+            current_size = len(q)
+            return reduce(
+                current,
+                x,
+                drop=drop,
+                last_size=last_size,
+                current_size=current_size,
+            )
+
+        scan_command = rxop.scan(queue, seed)
 
     else:
 
-        def constructor():
-            return _Reducer(reduce=func, roll=None)
+        def queue(q, x):
+            q.append(x)
+            return q
 
-    def _create(*args, scan=False, seed=NotSet, **kwargs):
-        reducer = constructor(*args, **kwargs)
+        scan_command = rxop.scan(queue, q)
 
-        if seed is NotSet:
-            seed = default_seed
-
-        if scan is True:
-            oper = rxop.scan(reducer.reduce, seed=seed)
-
-        elif scan:
-            oper = roll(n=scan, reduce=reducer.roll, seed=seed)
-
-        else:
-            oper = rxop.reduce(reducer.reduce, seed=seed)
-
-        if postprocess is not NotSet:
-            oper = rxop.pipe(oper, postprocess)
-
-        return oper
-
-    _create.__name__ = name
-    _create.__doc__ = func.__doc__
-    return _create
-
-
-##############################
-# Extra operators for giving #
-##############################
+    return rxop.pipe(scan_command, stream_once())
 
 
 def affix(**streams):
@@ -267,6 +289,17 @@ def collect_between(start, end, common=None):
 
 @reducer(default_seed=0)
 class count:
+    """Count operator.
+
+    Returns an observable sequence containing a value that represents how many elements in the specified
+    observable sequence satisfy a condition if provided, else the count of items.
+
+    Arguments:
+        predicate: A function to test each element for a condition.
+        scan: If True, generate a running count, if a number *n*, count the number of elements/matches
+            in the last *n* elements.
+    """
+
     def __init__(self, predicate=None):
         self.predicate = predicate
 
@@ -563,73 +596,6 @@ class max:
             return last
         else:
             return new
-
-
-def roll(n, reduce=None, seed=NotSet):  # noqa: F811
-    """Group the last n elements, giving a sequence of overlapping sequences.
-
-    For example, this can be used to compute a rolling average of the 100 last
-    elements (however, ``average(scan=100)`` is better optimized).
-
-    .. code-block:: python
-
-        op.roll(100, lambda xs: sum(xs) / len(xs))
-
-    .. marble::
-        :alt: roll
-
-        --1--2--3---4---5---6---|
-        [         roll(3)       ]
-        --1--12-123-234-345-456-|
-
-    Arguments:
-        n: The number of elements to group together.
-        reduce: A function to reduce the group.
-
-            It should take five arguments:
-                * last: The last result.
-                * add: The element that was just added. It is the last element
-                    in the elements list.
-                * drop: The element that was dropped to make room for the
-                    added one. It is *not* in the elements argument.
-                    If the list of elements is not yet of size n, there is
-                    no need to drop anything and drop is None.
-                * last_size: The window size on the last invocation.
-                * current_size: The window size on this invocation.
-
-            Defaults to returning the deque of elements directly. The same
-            reference is returned each time in order to save memory, so it
-            should be processed immediately.
-        seed: The first element of the reduction.
-    """
-    q = deque(maxlen=n)
-
-    if reduce is not None:
-
-        def queue(current, x):
-            drop = q[0] if len(q) == n else NotSet
-            last_size = len(q)
-            q.append(x)
-            current_size = len(q)
-            return reduce(
-                current,
-                x,
-                drop=drop,
-                last_size=last_size,
-                current_size=current_size,
-            )
-
-        scan_command = rxop.scan(queue, seed)
-
-    else:
-
-        def queue(q, x):
-            q.append(x)
-            return q
-
-        scan_command = rxop.scan(queue, q)
-
-    return rxop.pipe(scan_command, stream_once())
 
 
 def stream_once():

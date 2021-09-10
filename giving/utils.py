@@ -1,6 +1,9 @@
 import functools
 import types
 
+from rx import operators as rxop
+from rx.operators import NotSet
+
 
 def keyword_decorator(deco):
     """Wrap a decorator to optionally takes keyword arguments."""
@@ -21,6 +24,26 @@ def keyword_decorator(deco):
 
 
 def lax_function(fn):
+    """Add a ``**kwargs`` argument to fn if it does not have one.
+
+    ``fn`` is not modified. If it has a varkw argument, ``fn`` is returned directly,
+    otherwise a new function is made that takes varkw and does nothing with them (it
+    just drops them)
+
+    Example:
+
+        .. code-block:: python
+
+            @lax_function
+            def f(x):
+                return x * x
+
+            f(x=4, y=123, z="blah")  # works, returns 16. y and z are ignored.
+    """
+    # NOTE: The purpose of ``lax_function`` is to simplify ``kmap``, ``kfilter``, ``ksubscribe``
+    # and other mappers that can be partially applied to the element dictionaries in an
+    # observable stream.
+
     if isinstance(fn, types.FunctionType):
         KWVAR_FLAG = 8
         co = fn.__code__
@@ -64,3 +87,95 @@ def lax_function(fn):
             return newfn
 
     return fn
+
+
+class _Reducer:
+    def __init__(self, reduce, roll):
+        self.reduce = reduce
+        self.roll = roll
+
+
+@keyword_decorator
+def reducer(func, default_seed=NotSet, postprocess=NotSet):
+    """Create a reduction operator.
+
+    .. note::
+        If ``func`` is not given, this returns a decorator.
+
+    * If func is a function, it should have the signature ``func(accum, x)``
+      where ``accum`` is the last result and ``x`` is the new data.
+    * If func is a class, it should have the following methods:
+
+      * ``reduce(accum, x)``, used when ``scan`` is boolean (``scan=False`` or ``scan=True``)
+      * ``roll(accum, x, drop, last_size, current_size)`` (see :func:`giving.operators.roll`),
+        used when ``scan`` is an integer (``scan=n``). It should implement an optimized way to
+        reduce over the last n elements of a sequence. Note that ``last_size`` and ``current_size``
+        cannot exceed ``n``.
+      * Any arguments to ``__init__`` will be passed over when the operator is called.
+
+    Example:
+
+    .. code-block:: python
+
+        @reducer
+        def sum(last, new):
+            return last + new
+
+    .. code-block:: python
+
+        @reducer
+        class sum:
+            def reduce(self, last, new):
+                return last + new
+
+            def roll(self, last, new, drop, last_size, current_size):
+                result = last + new
+                if last_size == current_size:
+                    result -= drop
+                return result
+
+    Arguments:
+        func: A function or class that defines the reduction.
+        default_seed: The default seed to start the reduction.
+        postprocess: A postprocessing step to apply to the result of
+            the operator.
+
+    Returns:
+        A reduction operator that takes a ``scan`` argument to perform
+        a scan or roll operation instead of reduce.
+    """
+
+    from .extraops import roll
+
+    name = func.__name__
+    if isinstance(func, type):
+        constructor = func
+
+    else:
+
+        def constructor():
+            return _Reducer(reduce=func, roll=None)
+
+    def _create(*args, scan=False, seed=NotSet, **kwargs):
+        reducer = constructor(*args, **kwargs)
+
+        if seed is NotSet:
+            seed = default_seed
+
+        if scan is True:
+            oper = rxop.scan(reducer.reduce, seed=seed)
+
+        elif scan:
+            oper = roll(n=scan, reduce=reducer.roll, seed=seed)
+
+        else:
+            oper = rxop.reduce(reducer.reduce, seed=seed)
+
+        if postprocess is not NotSet:
+            oper = rxop.pipe(oper, postprocess)
+
+        return oper
+
+    _create.__name__ = name
+    _create.__doc__ = func.__doc__
+    return _create

@@ -344,7 +344,6 @@ class ObservableProxy:
     kfilter = _opmethod(op.kfilter)
     kmap = _opmethod(op.kmap)
     roll = _opmethod(op.roll)
-    stream_once = _opmethod(op.stream_once)
     tag = _opmethod(op.tag)
     throttle = _opmethod(op.throttle)
     unique = _opmethod(op.unique)

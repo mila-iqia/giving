@@ -80,7 +80,7 @@ def roll(n, reduce=None, seed=NotSet):  # noqa: F811
 
         scan_command = rxop.scan(queue, q)
 
-    return rxop.pipe(scan_command, stream_once())
+    return rxop.pipe(scan_command, rxop.share())
 
 
 def affix(**streams):
@@ -598,38 +598,6 @@ class max:
             return new
 
 
-def stream_once():
-    """Make sure that upstream operators only run once.
-
-    Use this if upstream operators have side effects, otherwise each
-    downstream subscription will re-run the effects.
-    """
-
-    def go(source):
-        observers = []
-
-        def on_next(value):
-            for obv in observers:
-                obv.on_next(value)
-
-        def on_error(value):  # pragma: no cover
-            for obv in observers:
-                obv.on_error(value)
-
-        def on_completed():
-            for obv in observers:
-                obv.on_completed()
-
-        def subscribe(obv, scheduler):
-            observers.append(obv)
-            return dispo
-
-        dispo = source.subscribe_(on_next, on_error, on_completed)
-        return rx.Observable(subscribe)
-
-    return go
-
-
 @reducer
 def sum(last, new):
     return last + new
@@ -677,7 +645,7 @@ def tag(group="", field="$word", group_field="$group"):
             setattr(data, "$word", word)
         return data
 
-    return rxop.pipe(rxop.map(tag_data), stream_once())
+    return rxop.pipe(rxop.map(tag_data), rxop.share())
 
 
 def unique():

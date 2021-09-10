@@ -143,7 +143,6 @@ from .extraops import (  # noqa: F401
     max,
     min,
     roll,
-    stream_once,
     sum,
     tag,
     unique,

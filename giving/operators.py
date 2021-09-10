@@ -139,6 +139,7 @@ from .extraops import (  # noqa: F401
     count,
     format,
     getitem,
+    group_wrap,
     kcombine,
     keep,
     kfilter,
@@ -152,6 +153,7 @@ from .extraops import (  # noqa: F401
     unique,
     variance,
     where,
+    where_any,
 )
 
 # Shortcut to throttle_first

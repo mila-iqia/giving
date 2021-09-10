@@ -196,6 +196,7 @@ class ObservableProxy:
     collect_between = _opmethod(op.collect_between)
     format = _opmethod(op.format)
     getitem = _opmethod(op.getitem)
+    group_wrap = _opmethod(op.group_wrap)
     kcombine = _opmethod(op.kcombine)
     keep = _opmethod(op.keep)
     kfilter = _opmethod(op.kfilter)
@@ -207,6 +208,7 @@ class ObservableProxy:
     unique = _opmethod(op.unique)
     variance = _opmethod(op.variance)
     where = _opmethod(op.where)
+    where_any = _opmethod(op.where_any)
 
     def breakpoint(self, **kwargs):  # pragma: no cover
         return self.subscribe(Breakpoint(**kwargs))

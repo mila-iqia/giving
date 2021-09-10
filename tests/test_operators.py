@@ -400,6 +400,16 @@ def test_where():
     assert results6 == [{"x": 2, "y": True}]
 
 
+def test_where_any():
+    with given() as gv:
+        gv >> (everything := [])
+        gv.where_any("x", "z") >> (results := [])
+
+        varia()
+
+    assert results == [d for d in everything if "x" in d or "z" in d]
+
+
 def aggron(n):
     for i in range(n):
         give(start=True)
@@ -548,3 +558,28 @@ def test_tag2():
 
     assert getattr(x0, "$group") == "gargamel"
     assert getattr(x1, "$group") == "gargamel"
+
+
+def test_group_wrap():
+    with given() as g:
+        results = []
+        results2 = []
+
+        gw = g.group_wrap()
+        gw.subscribe(lambda grp: grp["a"].sum() >> results)
+
+        gw = g.group_wrap(w=2)
+        gw.subscribe(lambda grp: grp["a"].sum() >> results2)
+
+        with give.wrap(w=1):
+            give(a=1)
+            give(a=2)
+
+        give(a=3)
+
+        with give.wrap(w=2):
+            give(a=4)
+            give(a=5)
+
+        assert results == [3, 9]
+        assert results2 == [9]

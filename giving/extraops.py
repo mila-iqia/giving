@@ -342,6 +342,55 @@ def getitem(*keys, strict=False):
             )
 
 
+def group_wrap(*keys, **conditions):
+    """Return a stream of observables for wrapped groups.
+
+    In this schema, B and E correspond to the messages sent in the enter and exit
+    phases respectively of the :meth:`~Giver.wrap` context manager.
+
+    .. marble::
+        :alt: group_wrap
+
+        --B-a1-a2-E-a3-B-a4-E--|
+        [     group_wrap()     ]
+        ---+-----------+-------|
+           +a1-a2-|
+                       +-a4-|
+
+    Example:
+        .. code-block:: python
+
+            results = []
+
+            @obs.group_wrap().subscribe
+            def _(obs2):
+                obs2["a"].sum() >> results
+
+    Arguments:
+        keys: Keys that must be present in the dictionary of the wrap statement
+            or, if a key starts with "!", it must *not* be present.
+        conditions: Maps a key to the value it must be associated to in the
+            dictionary of the wrap statement, or to a predicate function on the
+            value.
+    """
+    from .obs import ObservableProxy
+
+    begin = "$begin"
+    end = "$end"
+
+    def oper(source):
+        return source.pipe(
+            where(f"!{begin}", f"!{end}"),
+            rxop.window_toggle(
+                openings=where(begin, *keys, **conditions)(source),
+                closing_mapper=lambda data: where(**{end: data[begin]})(source),
+            ),
+            rxop.map(ObservableProxy),
+        )
+
+    return oper
+
+
 def kcombine():
     """Incrementally merge the dictionaries in the stream.
 
@@ -753,3 +802,23 @@ def where(*keys, **conditions):
         )
 
     return rxop.filter(filt)
+
+
+def where_any(*keys):
+    """Filter entries with any of the given keys.
+
+    .. marble::
+        :alt: where_any
+
+        ---a1--b2--c3--|
+        [ where_any(b) ]
+        -------b2------|
+
+    Arguments:
+        keys: Keys that must be present in the dictionary.
+    """
+
+    def _filt(data):
+        return isinstance(data, dict) and any(k in data for k in keys)
+
+    return rxop.filter(_filt)

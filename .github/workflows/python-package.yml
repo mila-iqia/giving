@@ -29,13 +29,15 @@ jobs:
         poetry install
 
     - name: Lint with flake8
+      if: ${{ matrix.python-version == '3.9' }}
       run: poetry run flake8
 
     - name: Check formatting with black
-      if: ${{ matrix.python-version >= '3.7' }}
+      if: ${{ matrix.python-version == '3.9' }}
       run: poetry run black --check .
 
     - name: Sort imports
+      if: ${{ matrix.python-version == '3.9' }}
       run: poetry run isort -c --df .
 
     - name: Test with pytest

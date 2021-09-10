@@ -9,7 +9,6 @@ from rx.operators import (  # noqa: F401
     buffer_with_count,
     buffer_with_time,
     buffer_with_time_or_count,
-    cast,
     catch,
     combine_latest,
     concat,

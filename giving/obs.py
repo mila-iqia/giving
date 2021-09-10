@@ -207,7 +207,6 @@ class ObservableProxy:
     buffer_with_count = _opmethod(op.buffer_with_count)
     buffer_with_time = _opmethod(op.buffer_with_time)
     buffer_with_time_or_count = _opmethod(op.buffer_with_time_or_count)
-    cast = _opmethod(op.cast)
     catch = _opmethod(op.catch)
     combine_latest = _opmethod(op.combine_latest)
     concat = _opmethod(op.concat)

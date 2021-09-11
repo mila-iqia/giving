@@ -93,3 +93,17 @@ def test_accum():
     assert results1 == [11, 22, 11, 33]
     assert results2 == [55, 11, 22, 11, 33]
     assert results3 == {11, 22, 33}
+
+
+def test_merge():
+    with given() as gv:
+        results = (gv["?a"] | gv["?b"] | gv["?c"]).accum()
+
+        give(a=1)
+        give(a=2, b=3)
+        give(b=4)
+        give(a=5)
+        give(c=6)
+        give(d=7)
+
+    assert results == [1, 2, 3, 4, 5, 6]

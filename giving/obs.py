@@ -175,6 +175,15 @@ class ObservableProxy:
 
         return self.subscribe(watch)
 
+    def __or__(self, other):
+        """Alias for :func:`~giving.operators.merge`.
+
+        Merge this ObservableProxy with another.
+        """
+        return self.merge(other)
+
+    __ror__ = __or__
+
     def __rshift__(self, subscription):
         """Alias for :meth:`subscribe`.
 

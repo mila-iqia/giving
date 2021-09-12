@@ -648,43 +648,6 @@ def tag(group="", field="$word", group_field="$group"):
     return rxop.pipe(rxop.map(tag_data), rxop.share())
 
 
-def unique():
-    """Collect unique elements.
-
-    Be aware that this keeps a set of all the elements seen so far,
-    so it may prevent them from being reclaimed by garbage collection
-    and can be expensive in memory.
-
-    .. marble::
-        :alt: unique
-
-        -1-3-1-2-2-5-|
-        [  unique()  ]
-        -1-3---2---5-|
-
-    """
-
-    def oper(source):
-        def subscribe(obv, scheduler=None):
-            elements = set()
-
-            def on_next(value):
-                if isinstance(value, dict):
-                    key = tuple(value.items())
-                else:
-                    key = value
-
-                if key not in elements:
-                    elements.add(key)
-                    obv.on_next(value)
-
-            return source.subscribe(on_next, obv.on_error, obv.on_completed, scheduler)
-
-        return rx.create(subscribe)
-
-    return oper
-
-
 def variance(*args, **kwargs):
     return rxop.pipe(
         average_and_variance(*args, **kwargs), rxop.starmap(lambda avg, var: var)

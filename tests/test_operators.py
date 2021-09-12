@@ -455,28 +455,6 @@ def test_collect_between2():
     ]
 
 
-def test_unique():
-    with given() as gv:
-        result_set = gv["?a"].accum(set())
-        result_list = gv.unique()["?a"].accum()
-
-        things(1, 2, 3, 1, 4, 5, 5, 1)
-        give(b=10)
-
-        assert list(result_set) == result_list
-
-
-def test_unique2():
-    with given() as gv:
-        result_set = gv["?a"].accum(set())
-        result_list = gv["?a"].unique().accum()
-
-        things(1, 2, 3, 1, 4, 5, 5, 1)
-        give(b=10)
-
-        assert list(result_set) == result_list
-
-
 def test_as():
     with given() as gv:
         results = gv["a"].as_("z").accum()

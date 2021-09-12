@@ -145,11 +145,15 @@ from .extraops import (  # noqa: F401
     roll,
     sum,
     tag,
-    unique,
     variance,
     where,
     where_any,
 )
 
-# Shortcut to throttle_first
+###########
+# Aliases #
+###########
+
+
+norepeat = distinct_until_changed
 throttle = throttle_first

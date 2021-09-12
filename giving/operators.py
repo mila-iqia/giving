@@ -103,7 +103,6 @@ from rx.operators import (  # noqa: F401
     throttle_with_mapper,
     throttle_with_timeout,
     time_interval,
-    timedelta,
     timeout,
     timeout_with_mapper,
     timestamp,

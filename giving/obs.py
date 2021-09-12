@@ -440,7 +440,6 @@ class ObservableProxy:
     throttle_with_mapper = _opmethod(op.throttle_with_mapper)
     throttle_with_timeout = _opmethod(op.throttle_with_timeout)
     time_interval = _opmethod(op.time_interval)
-    timedelta = _opmethod(op.timedelta)
     timeout = _opmethod(op.timeout)
     timeout_with_mapper = _opmethod(op.timeout_with_mapper)
     timestamp = _opmethod(op.timestamp)

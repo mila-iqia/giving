@@ -4,6 +4,7 @@ import time
 from collections import namedtuple
 from contextlib import contextmanager
 from contextvars import ContextVar
+from functools import partial
 from itertools import count
 from types import SimpleNamespace
 
@@ -174,6 +175,26 @@ def resolve(frame, func, args):
 
 
 class Giver:
+    """Giver of key/value pairs.
+
+    ``Giver`` is the class of the ``give`` object.
+
+    Arguments:
+        keys:
+            List of default keys to give. If ``keys=["x"]``, then
+            ``self(123)`` will give ``{"x": 123}``.
+        special:
+            List of special keys to give (e.g. "$line", "$time", etc.)
+        extra:
+            Extra key/value pairs to give.
+        context:
+            The ContextVar that contains a list of handlers to call
+            when something is given.
+        inherited:
+            A ContextVar to use for inherited key/value pairs to give,
+            as set by ``with self.inherit(key=value): ...``.
+    """
+
     def __init__(
         self,
         *,
@@ -189,28 +210,38 @@ class Giver:
         self.context = context
         self.inherited = inherited
 
+    def copy(self, keys=None, special=None, extra=None, context=None, inherited=None):
+        """Copy this Giver with modified parameters."""
+        return type(self)(
+            keys=self.keys if keys is None else keys,
+            special=self.special if special is None else special,
+            extra=self.extra if extra is None else extra,
+            context=self.context if context is None else context,
+            inherited=self.inherited if inherited is None else inherited,
+        )
+
     @property
     def line(self):
-        return Giver(
-            keys=self.keys,
-            special=(*self.special, "$line"),
-            extra=self.extra,
-            context=self.context,
-            inherited=self.inherited,
-        )
+        """Return a giver that gives the line where it is called."""
+        return self.copy(special=(*self.special, "$line"))
 
     @property
     def time(self):
-        return Giver(
-            keys=self.keys,
-            special=(*self.special, "$time"),
-            extra=self.extra,
-            context=self.context,
-            inherited=self.inherited,
-        )
+        """Return a giver that gives the time where it is called."""
+        return self.copy(special=(*self.special, "$time"))
 
     @contextmanager
     def inherit(self, **keys):
+        """Create a context manager within which extra values are given.
+
+        .. code-block:: python
+
+            with give.inherit(a=1):
+                give(b=2)   # gives {"a": 1, "b": 2}
+
+        Arguments:
+            keys: The key/value pairs to give within the block.
+        """
         inh = self.inherited.get()
         token = self.inherited.set({**inh, **keys})
         try:
@@ -220,6 +251,27 @@ class Giver:
 
     @contextmanager
     def wrap(self, **keys):
+        """Create a context manager that marks the beginning/end of the block.
+
+        ``wrap`` first creates a unique ID to identify the block,
+        then gives the ``$begin=UID`` sentinel at the beginning of
+        the block. It gives ``$end=UID`` at the end.
+
+        :meth:`giving.obs.ObservableProxy.wrap` is the corresponding
+        method on the ObservableProxy returned by ``given()`` and it
+        can be used to wrap another context manager on the same block.
+        :meth:`giving.obs.ObservableProxy.group_wrap` is another method
+        that uses the sentinels produced by ``wrap``.
+
+        .. code-block:: python
+
+            with give.wrap(x=1):  # gives: {"$begin": ID, "x": 1}
+                ...
+            # end block, gives: {"$end": ID, "x": 1}
+
+        Arguments:
+            keys: Extra key/value pairs to give along with the sentinels.
+        """
         num = next(global_count)
         self.produce({"$begin": num, **keys})
         try:
@@ -229,11 +281,27 @@ class Giver:
 
     @contextmanager
     def wrap_inherit(self, **keys):
+        """Shorthand for using wrap and inherit.
+
+        .. code-block:: python:
+
+            with give.wrap_inherit(a=1):
+                ...
+
+        Is equivalent to:
+
+        .. code-block:: python:
+
+            with give.wrap(a=1):
+                with give.inherit(a=1):
+                    ...
+        """
         with self.wrap(**keys):
             with self.inherit(**keys):
                 yield
 
     def produce(self, values):
+        """Give the values dictionary."""
         for special in self.special:
             values[special] = special_keys[special]()
 
@@ -248,6 +316,7 @@ class Giver:
             handler(values)
 
     def __call__(self, *args, **values):
+        """Give the args and values."""
         h = self.context.get()
         if h:
             if self.keys:
@@ -271,12 +340,33 @@ class Giver:
 
 
 def giver(*keys, **extra):
+    """Create a Giver to give the specified keys, plus extra values.
+
+    .. code-block:: python
+
+        g = giver("x", y=1)
+        give(3)   # gives {"x": 3, "y": 1}
+
+    """
     normal = [k for k in keys if not k.startswith("$")]
     special = [k for k in keys if k.startswith("$")]
     return Giver(keys=normal, special=special, extra=extra)
 
 
 class Given:
+    """Context manager that yields an ObservableProxy for a block.
+
+    Upon entering, an :class:`~giving.obs.ObservableProxy` is yielded,
+    and calls to ``give`` will trigger that Observable. Upon exiting,
+    the Observable is marked as completed, triggering reductions such
+    as ``min`` or ``sum``.
+
+    Arguments:
+        key: The key to extract, or None.
+        context:
+            The ContextVar to use to sync with ``give``.
+    """
+
     def __init__(self, key=None, context=global_context):
         self.key = key
         self.token = self.observers = None
@@ -310,11 +400,24 @@ class Given:
 
 
 def make_give(context=None):
+    """Create independent give/given/accumulate.
+
+    The resulting functions share their own ``ContextVar``, which
+    makes them independent from the main instances of ``give`` and
+    ``given``.
+
+    Arguments:
+        context: The ``ContextVar`` set by ``given`` and used by ``give``,
+            or ``None`` if a new ``ContextVar`` is to be created.
+
+    Returns:
+        A SimpleNamespace with attributes ``context``, ``give``,
+        ``given`` and ``accumulate``.
+    """
+
     context = context or ContextVar("context", default=())
     give = Giver(context=context)
-
-    def given(*args, **kwargs):
-        return Given(*args, **kwargs, context=context)
+    given = partial(Given, context=context)
 
     @contextmanager
     def accumulate(key=None):

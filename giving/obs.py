@@ -105,18 +105,65 @@ class ObservableProxy:
         return obj
 
     def breakpoint(self, **kwargs):  # pragma: no cover
+        """Trigger a breakpoint on every entry.
+
+        Arguments:
+            skip:
+                A list of globs corresponding to modules to skip during debugging,
+                for example ``skip=["giving.*"]`` would skip all frames that are in
+                the ``giving`` module.
+        """
         return self.subscribe(Breakpoint(**kwargs))
 
     def breakword(self, **kwargs):  # pragma: no cover
+        """Trigger a breakpoint using ``breakword``.
+
+        This feature requires the ``breakword`` package to be installed, and the
+        :func:`~giving.operators.tag` operator to be applied.
+
+        .. code-block:: python
+
+            gvt = gv.tag()
+            gvt.display()
+            gvt.breakword()
+
+        Arguments:
+            skip:
+                A list of globs corresponding to modules to skip during debugging,
+                for example ``skip=["giving.*"]`` would skip all frames that are in
+                the ``giving`` module.
+            word:
+                Only trigger the breakpoint on the given word.
+        """
         return self.subscribe(Breakpoint(use_breakword=True, **kwargs))
 
-    def display(self, *, breakword=False, word=None, **kwargs):
+    def display(self, *, breakword=None, skip=[], **kwargs):
+        """Pretty-print each element.
+
+        Arguments:
+            colors:
+                Whether to colorize the output or not.
+            time_format:
+                How to format the time (if present), e.g. ``"%Y-%m-%d %H:%M:%S"``
+            breakword:
+                If not None, run ``self.breakword(word=breakword)``.
+            skip:
+                If ``breakword is not None``, pass ``skip`` to the debugger.
+        """
         sub = self.subscribe(Displayer(**kwargs))
         if breakword:  # pragma: no cover
-            self.breakword(word=word)
+            self.breakword(word=breakword, skip=skip)
         return sub
 
     def give(self, *keys, **extra):
+        """``give`` each element.
+
+        Be careful using this method because it could easily lead to an infinite loop.
+
+        Arguments:
+            keys: Key(s) under which to give the elements.
+            extra: Extra key/value pairs to give along with the rest.
+        """
         from .core import Giver
 
         giver = Giver(keys=keys, extra=extra)
@@ -133,19 +180,92 @@ class ObservableProxy:
         return self.subscribe(gv)
 
     def ksubscribe(self, fn):
+        """Subscribe a function called with keyword arguments.
+
+        .. note::
+            The function passed to ``ksubscribe`` is wrapped with
+            :func:`~giving.utils.lax_function`, so it is not necessary
+            to add a ``**kwargs`` argument for keys that you do not need.
+
+        .. code-block:: python
+
+            gv.ksubscribe(lambda x, y=None, z=None: print(x, y, z))
+            give(x=1, z=2, abc=3)  # Prints 1, None, 2
+
+        Arguments:
+            fn: The function to call.
+        """
         fn = lax_function(fn)
         self.subscribe(lambda data: fn(**data))
 
     def kwrap(self, fn, begin="$begin", end="$end"):
+        """Subscribe a context manager, corresponding to :meth:`~giving.core.Giver.wrap`.
+
+        ``obs.kwrap(fn)`` is shorthand for ``obs.wrap(fn, pass_keys=True)``.
+
+        .. note::
+            The function passed to ``ksubscribe`` is wrapped with
+            :func:`~giving.utils.lax_function`, so it is not necessary
+            to add a ``**kwargs`` argument for keys that you do not need.
+
+        .. code-block:: python
+
+            @gv.kwrap
+            def _(x):
+                print(">", x)
+                yield
+                print("<", x)
+
+            with give.wrap(x=1):      # prints >1
+                ...
+                with give.wrap(x=2):  # prints >2
+                    ...
+                ...                   # prints <2
+            ...                       # prints <1
+
+        Arguments:
+            fn: The wrapper function. The arguments to ``give.wrap`` are transferred to
+                this function as keyword arguments.
+        """
         return self.wrap(fn, begin=begin, end=end, pass_keys=True)
 
     def print(self, format=None):
+        """Print each element of the stream.
+
+        Arguments:
+            format: A format string as would be used with ``str.format``.
+        """
         obs = self
         if format is not None:
             obs = self.format(format)
         return obs.subscribe(print)
 
     def wrap(self, fn, begin="$begin", end="$end", pass_keys=False):
+        """Subscribe a context manager, corresponding to :meth:`~giving.core.Giver.wrap`.
+
+        .. code-block:: python
+
+            @gv.wrap
+            def _():
+                print(">")
+                yield
+                print("<")
+
+            with give.wrap(x=1):      # prints >
+                ...
+                with give.wrap(x=2):  # prints >
+                    ...
+                ...                   # prints <
+            ...                       # prints <
+
+        Arguments:
+            fn: The wrapper function OR an object with an ``__enter__`` method. If the wrapper is
+                a generator, it will be wrapped with ``contextmanager(fn)``.
+                If a function, it will be called with no arguments, or with the arguments given to
+                ``give.wrap`` if ``pass_keys=True``.
+            pass_keys: Whether to pass the arguments to ``give.wrap`` to this function as keyword
+                arguments. You may use :meth:`kwrap` as a shortcut to ``pass_keys=True``.
+        """
         if pass_keys:
             fn = lax_function(fn)
 
@@ -196,6 +316,11 @@ class ObservableProxy:
         return self.subscribe(subscription)
 
     def __getitem__(self, item):
+        """Mostly an alias for :meth:`~giving.operators.getitem`.
+
+        Extra feature: if the item starts with ``"?"``, ``getitem`` is called with
+        ``strict=False``.
+        """
         if not isinstance(item, tuple):
             item = (item,)
         strict = not any("?" in x for x in item if isinstance(x, str))

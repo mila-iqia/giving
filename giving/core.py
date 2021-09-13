@@ -250,7 +250,7 @@ class Giver:
             self.inherited.reset(token)
 
     @contextmanager
-    def wrap(self, **keys):
+    def wrap(self, name, **keys):
         """Create a context manager that marks the beginning/end of the block.
 
         ``wrap`` first creates a unique ID to identify the block,
@@ -265,14 +265,16 @@ class Giver:
 
         .. code-block:: python
 
-            with give.wrap(x=1):  # gives: {"$begin": ID, "x": 1}
+            with give.wrap("W", x=1):  # gives: {"$wrap": "W", "$begin": ID, "x": 1}
                 ...
-            # end block, gives: {"$end": ID, "x": 1}
+            # end block, gives: {"$wrap": "W", "$end": ID, "x": 1}
 
         Arguments:
+            name: The name to associate to this wrap block.
             keys: Extra key/value pairs to give along with the sentinels.
         """
         num = next(global_count)
+        keys["$wrap"] = name
         self.produce({"$begin": num, **keys})
         try:
             yield
@@ -280,24 +282,28 @@ class Giver:
             self.produce({"$end": num, **keys})
 
     @contextmanager
-    def wrap_inherit(self, **keys):
+    def wrap_inherit(self, name, **keys):
         """Shorthand for using wrap and inherit.
 
         .. code-block:: python:
 
-            with give.wrap_inherit(a=1):
+            with give.wrap_inherit("W", a=1):
                 ...
 
         Is equivalent to:
 
         .. code-block:: python:
 
-            with give.wrap(a=1):
-                with give.inherit(a=1):
+            with give.inherit(a=1):
+                with give.wrap("W"):
                     ...
+
+        Arguments:
+            name: The name to associate to this wrap block.
+            keys: Key/value pairs to inherit.
         """
-        with self.wrap(**keys):
-            with self.inherit(**keys):
+        with self.inherit(**keys):
+            with self.wrap(name):
                 yield
 
     def produce(self, values):

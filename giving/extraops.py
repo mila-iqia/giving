@@ -375,7 +375,7 @@ def getitem(*keys, strict=False):
             )
 
 
-def group_wrap(*keys, **conditions):
+def group_wrap(name, **conditions):
     """Return a stream of observables for wrapped groups.
 
     In this schema, B and E correspond to the messages sent in the enter and exit
@@ -400,8 +400,7 @@ def group_wrap(*keys, **conditions):
                 obs2["a"].sum() >> results
 
     Arguments:
-        keys: Keys that must be present in the dictionary of the wrap statement
-            or, if a key starts with "!", it must *not* be present.
+        name: Name of the wrap block to group on.
         conditions: Maps a key to the value it must be associated to in the
             dictionary of the wrap statement, or to a predicate function on the
             value.
@@ -411,11 +410,13 @@ def group_wrap(*keys, **conditions):
     begin = "$begin"
     end = "$end"
 
+    conditions["$wrap"] = name
+
     def oper(source):
         return source.pipe(
             where(f"!{begin}", f"!{end}"),
             rxop.window_toggle(
-                openings=where(begin, *keys, **conditions)(source),
+                openings=where(begin, **conditions)(source),
                 closing_mapper=lambda data: where(**{end: data[begin]})(source),
             ),
             rxop.map(ObservableProxy),

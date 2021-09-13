@@ -281,15 +281,15 @@ def test_wrap():
 
         resultsw = []
 
-        @g.kwrap
+        @g.kwrap("w")
         def _(w):
             resultsw.append(w)
             yield
             resultsw.append(-w)
 
-        with give.wrap_inherit(w=1):
+        with give.wrap_inherit("w", w=1):
             give(a=10)
-            with give.wrap(w=2):
+            with give.wrap("w", w=2):
                 give(a=20)
             give(a=30)
 
@@ -315,14 +315,13 @@ def test_wrap2():
         results.append(">")
 
     with given() as g:
-
-        g.where(w=1).wrap(mng1())
-        g.where(w=2).wrap(mng2)
+        g.wrap("A", mng1())
+        g.wrap("B", mng2)
         g["?a"] >> results
 
-        with give.wrap(w=1):
+        with give.wrap("A"):
             give(a=10)
-            with give.wrap(w=2):
+            with give.wrap("B"):
                 give(a=20)
             give(a=30)
 

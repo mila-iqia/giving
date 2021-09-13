@@ -1,6 +1,6 @@
 import inspect
 from contextlib import contextmanager
-from functools import wraps
+from functools import partial, wraps
 
 from . import operators as op
 from .executors import Breakpoint, Displayer
@@ -198,7 +198,7 @@ class ObservableProxy:
         fn = lax_function(fn)
         self.subscribe(lambda data: fn(**data))
 
-    def kwrap(self, fn, begin="$begin", end="$end"):
+    def kwrap(self, name, fn=None, begin="$begin", end="$end"):
         """Subscribe a context manager, corresponding to :meth:`~giving.core.Giver.wrap`.
 
         ``obs.kwrap(fn)`` is shorthand for ``obs.wrap(fn, pass_keys=True)``.
@@ -224,10 +224,11 @@ class ObservableProxy:
             ...                       # prints <1
 
         Arguments:
+            name: The name of the wrap block to subscribe to.
             fn: The wrapper function. The arguments to ``give.wrap`` are transferred to
                 this function as keyword arguments.
         """
-        return self.wrap(fn, begin=begin, end=end, pass_keys=True)
+        return self.wrap(name, fn, begin=begin, end=end, pass_keys=True)
 
     def print(self, format=None):
         """Print each element of the stream.
@@ -240,25 +241,26 @@ class ObservableProxy:
             obs = self.format(format)
         return obs.subscribe(print)
 
-    def wrap(self, fn, begin="$begin", end="$end", pass_keys=False):
+    def wrap(self, name, fn=None, begin="$begin", end="$end", pass_keys=False):
         """Subscribe a context manager, corresponding to :meth:`~giving.core.Giver.wrap`.
 
         .. code-block:: python
 
-            @gv.wrap
+            @gv.wrap("main")
             def _():
-                print(">")
-                yield
                 print("<")
+                yield
+                print(">")
 
-            with give.wrap(x=1):      # prints >
+            with give.wrap("main"):    # prints <
                 ...
-                with give.wrap(x=2):  # prints >
+                with give.wrap("sub"):
                     ...
-                ...                   # prints <
-            ...                       # prints <
+                ...
+            ...                        # prints >
 
         Arguments:
+            name: The name of the wrap block to subscribe to.
             fn: The wrapper function OR an object with an ``__enter__`` method. If the wrapper is
                 a generator, it will be wrapped with ``contextmanager(fn)``.
                 If a function, it will be called with no arguments, or with the arguments given to
@@ -266,6 +268,9 @@ class ObservableProxy:
             pass_keys: Whether to pass the arguments to ``give.wrap`` to this function as keyword
                 arguments. You may use :meth:`kwrap` as a shortcut to ``pass_keys=True``.
         """
+        if fn is None:
+            return partial(self.wrap, name, begin=begin, end=end, pass_keys=pass_keys)
+
         if pass_keys:
             fn = lax_function(fn)
 
@@ -275,6 +280,9 @@ class ObservableProxy:
         managers = {}
 
         def watch(data):
+            if data.get("$wrap", None) is not name:
+                return
+
             if begin in data:
                 key = data[begin]
                 assert key not in managers

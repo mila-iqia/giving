@@ -537,21 +537,21 @@ def test_group_wrap():
         results = []
         results2 = []
 
-        gw = g.group_wrap()
+        gw = g.group_wrap("A")
         gw.subscribe(lambda grp: grp["a"].sum() >> results)
 
-        gw = g.group_wrap(w=2)
+        gw = g.group_wrap("B")
         gw.subscribe(lambda grp: grp["a"].sum() >> results2)
 
-        with give.wrap(w=1):
+        with give.wrap("A"):
             give(a=1)
             give(a=2)
 
         give(a=3)
 
-        with give.wrap(w=2):
+        with give.wrap("B"):
             give(a=4)
             give(a=5)
 
-        assert results == [3, 9]
+        assert results == [3]
         assert results2 == [9]

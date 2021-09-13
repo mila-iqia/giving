@@ -254,8 +254,9 @@ class Giver:
         """Create a context manager that marks the beginning/end of the block.
 
         ``wrap`` first creates a unique ID to identify the block,
-        then gives the ``$begin=UID`` sentinel at the beginning of
-        the block. It gives ``$end=UID`` at the end.
+        then gives the ``$wrap`` sentinel with name, uid and step="begin"
+        at the beginning of it gives the same ``$wrap`` but with step="end"
+        at the end of the block.
 
         :meth:`giving.obs.ObservableProxy.wrap` is the corresponding
         method on the ObservableProxy returned by ``given()`` and it
@@ -265,21 +266,20 @@ class Giver:
 
         .. code-block:: python
 
-            with give.wrap("W", x=1):  # gives: {"$wrap": "W", "$begin": ID, "x": 1}
+            with give.wrap("W", x=1):  # gives: {"$wrap": {"name": "W", "step": "begin", "id": ID}, "x": 1}
                 ...
-            # end block, gives: {"$wrap": "W", "$end": ID, "x": 1}
+            # end block, gives: {"$wrap": {"name": "W", "step": "end", "id": ID}, "x": 1}
 
         Arguments:
             name: The name to associate to this wrap block.
             keys: Extra key/value pairs to give along with the sentinels.
         """
         num = next(global_count)
-        keys["$wrap"] = name
-        self.produce({"$begin": num, **keys})
+        self.produce({"$wrap": {"name": name, "step": "begin", "id": num}, **keys})
         try:
             yield
         finally:
-            self.produce({"$end": num, **keys})
+            self.produce({"$wrap": {"name": name, "step": "end", "id": num}, **keys})
 
     @contextmanager
     def wrap_inherit(self, name, **keys):

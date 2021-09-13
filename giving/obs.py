@@ -198,7 +198,7 @@ class ObservableProxy:
         fn = lax_function(fn)
         self.subscribe(lambda data: fn(**data))
 
-    def kwrap(self, name, fn=None, begin="$begin", end="$end"):
+    def kwrap(self, name, fn=None, return_function=False):
         """Subscribe a context manager, corresponding to :meth:`~giving.core.Giver.wrap`.
 
         ``obs.kwrap(fn)`` is shorthand for ``obs.wrap(fn, pass_keys=True)``.
@@ -228,7 +228,7 @@ class ObservableProxy:
             fn: The wrapper function. The arguments to ``give.wrap`` are transferred to
                 this function as keyword arguments.
         """
-        return self.wrap(name, fn, begin=begin, end=end, pass_keys=True)
+        return self.wrap(name, fn, pass_keys=True, return_function=return_function)
 
     def print(self, format=None):
         """Print each element of the stream.
@@ -241,7 +241,7 @@ class ObservableProxy:
             obs = self.format(format)
         return obs.subscribe(print)
 
-    def wrap(self, name, fn=None, begin="$begin", end="$end", pass_keys=False):
+    def wrap(self, name, fn=None, pass_keys=False, return_function=False):
         """Subscribe a context manager, corresponding to :meth:`~giving.core.Giver.wrap`.
 
         .. code-block:: python
@@ -269,7 +269,7 @@ class ObservableProxy:
                 arguments. You may use :meth:`kwrap` as a shortcut to ``pass_keys=True``.
         """
         if fn is None:
-            return partial(self.wrap, name, begin=begin, end=end, pass_keys=pass_keys)
+            return partial(self.wrap, name, pass_keys=pass_keys, return_function=True)
 
         if pass_keys:
             fn = lax_function(fn)
@@ -280,11 +280,12 @@ class ObservableProxy:
         managers = {}
 
         def watch(data):
-            if data.get("$wrap", None) is not name:
+            wr = data.get("$wrap", None)
+            if wr is None or wr["name"] is not name:
                 return
 
-            if begin in data:
-                key = data[begin]
+            if wr["step"] == "begin":
+                key = wr["id"]
                 assert key not in managers
                 if hasattr(fn, "__enter__"):
                     manager = fn
@@ -296,12 +297,16 @@ class ObservableProxy:
                 managers[key] = manager
                 manager.__enter__()
 
-            if end in data:
-                key = data[end]
+            if wr["step"] == "end":
+                key = wr["id"]
                 managers[key].__exit__(None, None, None)
                 del managers[key]
 
-        return self.subscribe(watch)
+        disposable = self.subscribe(watch)
+        if return_function:
+            return fn
+        else:
+            return disposable
 
     def __or__(self, other):
         """Alias for :func:`~giving.operators.merge`.

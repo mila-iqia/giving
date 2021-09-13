@@ -407,17 +407,23 @@ def group_wrap(name, **conditions):
     """
     from .obs import ObservableProxy
 
-    begin = "$begin"
-    end = "$end"
-
-    conditions["$wrap"] = name
-
     def oper(source):
+        opens = rxop.pipe(
+            where("$wrap", **conditions),
+            getitem("$wrap"),
+            where(step="begin", name=name),
+        )
+
+        def closes(data):
+            return rxop.pipe(
+                getitem("$wrap", strict=False), where(step="end", id=data["id"])
+            )(source)
+
         return source.pipe(
-            where(f"!{begin}", f"!{end}"),
+            where("!$wrap"),
             rxop.window_toggle(
-                openings=where(begin, **conditions)(source),
-                closing_mapper=lambda data: where(**{end: data[begin]})(source),
+                openings=opens(source),
+                closing_mapper=closes,
             ),
             rxop.map(ObservableProxy),
         )

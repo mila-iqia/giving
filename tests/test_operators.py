@@ -555,3 +555,43 @@ def test_group_wrap():
 
         assert results == [3]
         assert results2 == [9]
+
+
+def test_sole():
+    with given() as gv:
+        results = gv.sole().accum()
+        results2 = gv.sole(keep_key=True).accum()
+
+        give(x=1)
+        give(y=2)
+        give(z=3)
+
+    assert results == [1, 2, 3]
+    assert results2 == [("x", 1), ("y", 2), ("z", 3)]
+
+
+def test_sole_exclude():
+    with given() as gv:
+        results = gv.sole(exclude="woo").accum()
+        results2 = gv.sole(exclude=["y"]).accum()
+
+        give(x=1)
+        give(y=2, woo=77)
+        give(z=3)
+
+    assert results == [1, 2, 3]
+    assert results2 == [1, 77, 3]
+
+
+def test_sole_errors():
+    with given() as gv:
+        gv.sole().display()
+
+        with pytest.raises(Exception):
+            give(x=1, y=2)
+
+    with given() as gv:
+        gv.sole(exclude="z").display()
+
+        with pytest.raises(Exception):
+            give(z=3)

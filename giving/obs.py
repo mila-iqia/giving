@@ -491,6 +491,7 @@ class ObservableProxy:
     kmap = _opmethod(op.kmap)
     norepeat = _opmethod(op.norepeat)
     roll = _opmethod(op.roll)
+    sole = _opmethod(op.sole)
     tag = _opmethod(op.tag)
     throttle = _opmethod(op.throttle)
     variance = _opmethod(op.variance)

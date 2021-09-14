@@ -142,6 +142,7 @@ from .extraops import (  # noqa: F401
     max,
     min,
     roll,
+    sole,
     sum,
     tag,
     variance,

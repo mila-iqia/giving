@@ -605,6 +605,38 @@ class max:
             return new
 
 
+def sole(*, keep_key=False, exclude=[]):
+    """Extract values from a stream of dicts with one entry each.
+
+    --x1--y2--y3--z4--|
+    [     sole()      ]
+    --1---2---3---4---|
+
+    If, after removing keys from the exclusion set, any dict is empty
+    or has a length superior to 1, that is an error.
+
+    Arguments:
+        keep_key: If True, return a (key, value) tuple, otherwise only
+            return the value. Defaults to False.
+        exclude: Keys to exclude.
+    """
+
+    if isinstance(exclude, str):
+        exclude = [exclude]
+
+    def extract(data):
+        pairs = [(k, v) for k, v in data.items() if k not in exclude]
+        if len(pairs) == 1:
+            (kv,) = pairs
+            return kv if keep_key else kv[1]
+        elif len(pairs) == 0:
+            raise Exception("The dict has no valid entries", data)
+        else:
+            raise Exception("The dict has more than one entry", data)
+
+    return rxop.map(extract)
+
+
 @reducer
 def sum(last, new):
     return last + new

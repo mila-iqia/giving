@@ -4,6 +4,7 @@ from .core import (
     Giver,
     accumulate,
     give,
+    givelike,
     given,
     giver,
     make_give,

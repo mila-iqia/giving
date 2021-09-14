@@ -1,7 +1,7 @@
 import pytest
 from varname import ImproperUseError, VarnameRetrievingError
 
-from giving import accumulate, give, given, giver
+from giving import accumulate, give, givelike, given, giver
 from giving.core import LinePosition, register_special, resolve
 
 
@@ -326,3 +326,44 @@ def test_wrap2():
             give(a=30)
 
     assert results == ["(", 10, "<", 20, ">", 30, ")"]
+
+
+def test_givelike():
+    @givelike
+    def stuff(data):
+        return {"stuff": data, "transformed": True}
+
+    with given() as gv:
+        results = gv.accum()
+
+        x = 3
+        stuff()
+        y = 4
+        give(y)
+        stuff(x, y)
+
+    assert results == [
+        {"stuff": {"x": 3}, "transformed": True},
+        {"y": 4},
+        {"stuff": {"x": 3, "y": 4}, "transformed": True},
+    ]
+
+
+def test_givelike_2():
+    give2 = giver("zazz")
+
+    @givelike(give=give2)
+    def stuff(data):
+        return {"stuff": data, "transformed": True}
+
+    with given() as gv:
+        results = gv.accum()
+
+        x = stuff(3)
+        y = 4
+        stuff(y, z=x)
+
+    assert results == [
+        {"stuff": {"zazz": 3}, "transformed": True},
+        {"stuff": {"zazz": 4, "z": 3}, "transformed": True},
+    ]

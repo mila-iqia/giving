@@ -14,6 +14,7 @@ from varname.utils import get_node
 
 from . import operators as op
 from .obs import ObservableProxy
+from .utils import keyword_decorator
 
 ABSENT = object()
 
@@ -193,6 +194,9 @@ class Giver:
         inherited:
             A ContextVar to use for inherited key/value pairs to give,
             as set by ``with self.inherit(key=value): ...``.
+        transform:
+            A function from dict to dict that modifies the values to
+            give.
     """
 
     def __init__(
@@ -203,14 +207,24 @@ class Giver:
         extra={},
         context=global_context,
         inherited=global_inherited,
+        transform=None,
     ):
         self.keys = keys
         self.special = special
         self.extra = extra
         self.context = context
         self.inherited = inherited
+        self.transform = transform
 
-    def copy(self, keys=None, special=None, extra=None, context=None, inherited=None):
+    def copy(
+        self,
+        keys=None,
+        special=None,
+        extra=None,
+        context=None,
+        inherited=None,
+        transform=None,
+    ):
         """Copy this Giver with modified parameters."""
         return type(self)(
             keys=self.keys if keys is None else keys,
@@ -218,6 +232,7 @@ class Giver:
             extra=self.extra if extra is None else extra,
             context=self.context if context is None else context,
             inherited=self.inherited if inherited is None else inherited,
+            transform=self.transform if transform is None else transform,
         )
 
     @property
@@ -337,6 +352,9 @@ class Giver:
             elif not values:
                 values = resolve(1, self, ())
 
+            if self.transform:
+                values = self.transform(values)
+
             self.produce(values)
 
         if len(args) == 1:
@@ -445,3 +463,24 @@ _global_given = make_give(context=global_context)
 give = _global_given.give
 given = _global_given.given
 accumulate = _global_given.accumulate
+
+
+@keyword_decorator
+def givelike(fn, give=give):
+    """Create a version of give that transforms the data.
+
+    .. code-block:: python
+
+        @givelike
+        def give_image(data):
+            return {"image": data}
+
+        ...
+
+        give_image(x, y)  # gives {"image": {"x": x, "y": y}}
+
+    Arguments:
+        fn: A function from a dict to a dict.
+        give: The base give function to wrap (defaults to global give).
+    """
+    return give.copy(transform=fn)

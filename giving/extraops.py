@@ -468,7 +468,7 @@ def keep(*keys, **remap):
         return isinstance(data, dict) and any(k in remap for k in data.keys())
 
     def _rekey(data):
-        return {remap[k]: v for k, v in data.items() if k in remap}
+        return {k2: data[k1] for k1, k2 in remap.items() if k1 in data}
 
     return rxop.pipe(rxop.filter(_filt), rxop.map(_rekey))
 

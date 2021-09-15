@@ -45,6 +45,10 @@ giving.obs
 
             See :func:`~giving.operators.as_observable`
 
+        .. function:: augment(...)
+
+            See :func:`~giving.operators.augment`
+
         .. function:: average(...)
 
             See :func:`~giving.operators.average`

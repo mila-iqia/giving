@@ -8,6 +8,7 @@ Most of the operators in this page are defined in the rx_ package.
 
 The following operators are added in ``giving`` in order to better handle the kind of data produced by ``give``:
 :func:`~giving.operators.affix`, 
+:func:`~giving.operators.augment`,
 :func:`~giving.operators.as_`, 
 :func:`~giving.operators.average_and_variance`, 
 :func:`~giving.operators.collect_between`, 
@@ -42,6 +43,7 @@ The main difference is the ``scan`` argument, which reinterprets the reduction a
     .. autofunction:: amb
     .. autofunction:: as_
     .. autofunction:: as_observable
+    .. autofunction:: augment
     .. autofunction:: average(*, scan=False)
     .. autofunction:: average_and_variance(*, scan=False)
     .. autofunction:: buffer

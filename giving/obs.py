@@ -479,6 +479,7 @@ class ObservableProxy:
     #############################
 
     affix = _opmethod(op.affix)
+    augment = _opmethod(op.augment)
     as_ = _opmethod(op.as_)
     average_and_variance = _opmethod(op.average_and_variance)
     collect_between = _opmethod(op.collect_between)

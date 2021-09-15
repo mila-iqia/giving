@@ -84,7 +84,7 @@ def roll(n, reduce=None, seed=NotSet):  # noqa: F811
 
 
 def affix(**streams):
-    """Augment a stream of dicts with extra keys.
+    """Affix streams as extra keys on an existing stream of dicts.
 
     The affixed streams should have the same length as the main one, so when
     affixing a reduction, one should set ``scan=True``, or ``scan=n``.
@@ -119,6 +119,37 @@ def affix(**streams):
         return {**main, **dict(zip(keys, rest))}
 
     return rxop.pipe(rxop.zip(*values), rxop.map(merge))
+
+
+def augment(**fns):
+    """Augment a stream of dicts with new keys.
+
+    Each key in ``fns`` should be associated to a function that will be called
+    with the rest of the data as keyword arguments, so the argument names
+    matter. The results overwrite the old data, if any keys are in common.
+
+    .. note::
+        The functions passed in ``fns`` will be wrapped with
+        :func:`~giving.utils.lax_function` if possible.
+
+        This means that these functions are considered to have an
+        implicit ``**kwargs`` argument, so that any data they do
+        not need is ignored.
+
+    .. code-block:: python
+
+        # [{"x": 1, "y": 2}, ...] => [{"x": 1, "y": 2, "z": 3}, ...]
+        gv.augment(z=lambda x, y: x + y)
+
+        # [{"lo": 2, "hi": 3}, ...] => [{"lo": 2, "hi": 3, "higher": 9}, ...]
+        gv.augment(higher=lambda hi: hi * hi)
+
+    Arguments:
+        fns: A map from new key names to the functions to compute them.
+    """
+
+    fns = {k: lax_function(fn) for k, fn in fns.items()}
+    return rxop.map(lambda data: {**{k: fn(**data) for k, fn in fns.items()}, **data})
 
 
 def as_(key):
@@ -498,7 +529,7 @@ def kfilter(fn):
     return rxop.filter(lambda kwargs: fn(**kwargs))
 
 
-def kmap(_fn=None, **_kwargs):
+def kmap(_fn=None, **_fns):
     """Map a dict, passing keyword arguments.
 
     ``kmap`` either takes a positional function argument or keyword arguments
@@ -511,7 +542,7 @@ def kmap(_fn=None, **_kwargs):
             # [{"x": 1, "y": 2}] => [3]
             gv.kmap(lambda x, y: x + y)
 
-            # [{"x": 1, "y": 2}] => [{"x": 1, "y": 2, "z": 3}]
+            # [{"x": 1, "y": 2}] => [{"z": 3}]
             gv.kmap(z=lambda x, y: x + y)
 
     Arguments:
@@ -524,21 +555,21 @@ def kmap(_fn=None, **_kwargs):
                 arguments list and the function does not have a ``**kwargs``
                 argument, these elements will be dropped and no error will
                 occur.
-        _kwargs: Alternatively, build a new dict with each key associated to
+        _fns: Alternatively, build a new dict with each key associated to
             a function with the same interface as fn.
     """
-    if _fn and _kwargs or not _fn and not _kwargs:
+    if _fn and _fns or not _fn and not _fns:
         raise TypeError(
             "kmap either takes one argument or keyword arguments but not both"
         )
 
     elif _fn:
         _fn = lax_function(_fn)
-        return rxop.map(lambda kwargs: _fn(**kwargs))
+        return rxop.map(lambda data: _fn(**data))
 
     else:
-        fns = {k: lax_function(fn) for k, fn in _kwargs.items()}
-        return rxop.map(lambda kwargs: {k: fn(**kwargs) for k, fn in fns.items()})
+        fns = {k: lax_function(fn) for k, fn in _fns.items()}
+        return rxop.map(lambda data: {k: fn(**data) for k, fn in fns.items()})
 
 
 @reducer

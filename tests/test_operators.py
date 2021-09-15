@@ -110,6 +110,32 @@ def test_kmap_err():
             gv.kmap(lambda a: -a, b=lambda b: -b)
 
 
+def test_augment():
+    with given() as gv:
+        results = gv.augment(x=lambda **kw: -kw["b"], y=lambda a: a * a).accum()
+        fib(5)
+        assert results == [
+            {"a": 0, "b": 1, "x": -1, "y": 0},
+            {"a": 1, "b": 1, "x": -1, "y": 1},
+            {"a": 1, "b": 2, "x": -2, "y": 1},
+            {"a": 2, "b": 3, "x": -3, "y": 4},
+            {"a": 3, "b": 5, "x": -5, "y": 9},
+        ]
+
+
+def test_augment_overwrite():
+    with given() as gv:
+        results = gv.kmap(a=lambda **kw: -kw["b"], b=lambda a: a * a).accum()
+        fib(5)
+        assert results == [
+            {"a": -1, "b": 0},
+            {"a": -1, "b": 1},
+            {"a": -2, "b": 1},
+            {"a": -3, "b": 4},
+            {"a": -5, "b": 9},
+        ]
+
+
 def test_kfilter():
     with given() as gv:
         results = gv.kfilter(lambda a: a > 0)["a"].accum()

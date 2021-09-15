@@ -128,6 +128,7 @@ from rx.operators import (  # noqa: F401
 from .extraops import (  # noqa: F401
     affix,
     as_,
+    augment,
     average,
     average_and_variance,
     collect_between,

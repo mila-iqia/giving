@@ -10,3 +10,4 @@ dist/
 .benchmarks/
 .DS_Store
 .envrc
+docs/_build

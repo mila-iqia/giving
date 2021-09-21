@@ -50,7 +50,7 @@ def train(args, model, device, train_loader, optimizer, epoch):
         loss = F.nll_loss(output, target)
         loss.backward()
         optimizer.step()
-        give(batch_idx, train_loss=loss.item())
+        give(batch_idx, train_loss=loss)
 
 
 def test(model, device, test_loader):
@@ -117,22 +117,53 @@ def run(args):
         torch.save(model.state_dict(), "mnist_cnn.pt")
 
 
+def log_all(gv):
+    gv.display()
+
+
+def log_simple(gv):
+    to_display = [
+        "mode",
+        "batch_idx",
+        "train_loss",
+        "test_loss",
+        "correct",
+    ]
+    data = (
+        gv.where("train_loss").throttle(0.5)
+        | gv.where("test_loss")
+    )
+    data.keep(*to_display).display()
+
+
 def log_terminal(gv):
     @gv.kwrap("train")
     @gv.kwrap("test")
     def _(mode):
-        print(f"> Start {mode}")
+        print(f"Start {mode}")
         yield
-        print(f"< End {mode}")
+        print(f"End {mode}")
 
-    gvtl = gv.where_any("batch_idx").throttle(0.5)
-    gvtl.affix(
-        progress=gvtl.kmap(
-            lambda batch_idx, batch_size, length: f"{(batch_idx + 1) * batch_size}/{length}"
+    @gv.where("train_loss").throttle(0.5).ksubscribe
+    def _(batch_idx, batch_size, length, epoch, train_loss):
+        n = (batch_idx + 1) * batch_size
+        progress = f"{n}/{length} {n / length:.0%}"
+        print(
+            f"  Train Epoch #{epoch} [{progress}] Loss: {train_loss.item():.6f}"
         )
-    ).keep("mode", "epoch", "progress", "train_loss").display()
 
-    gv.keep("test_loss", "correct").display()
+    @gv.where("batch_idx", mode="test").throttle(0.5).ksubscribe
+    def _(batch_idx, batch_size, length, epoch):
+        n = (batch_idx + 1) * batch_size
+        progress = f"{n}/{length} {n / length:.0%}"
+        print(
+            f"  Test Epoch #{epoch} [{progress}]"
+        )
+
+    @gv.where("test_loss", "correct").ksubscribe
+    def _(test_loss, correct):
+        print(f"  Test loss: {test_loss:.6f}")
+        print(f"  Accuracy:  {correct:.0%}")
 
 
 def log_wandb(gv, args):
@@ -143,7 +174,7 @@ def log_wandb(gv, args):
     wandb.init(project=project, entity=entity, config=vars(args))
 
     gv["?model"].first() >> wandb.watch
-    gv.keep("train_loss", "test_loss") >> wandb.log
+    gv.keep("train_loss", "test_loss", "correct") >> wandb.log
 
 
 def log_mlflow(gv, args):
@@ -151,7 +182,7 @@ def log_mlflow(gv, args):
 
     mlflow.log_params(vars(args))
 
-    gv.keep("train_loss", "test_loss") >> mlflow.log_metrics
+    gv.keep("train_loss", "test_loss", "correct") >> mlflow.log_metrics
 
 
 def log_comet(gv, args):
@@ -175,7 +206,7 @@ def log_comet(gv, args):
     gv["?epoch"] >> experiment.set_epoch
     gv["?batch_idx"] >> experiment.set_step
 
-    gv.keep("train_loss", "test_loss") >> experiment.log_metrics
+    gv.keep("train_loss", "test_loss", "correct") >> experiment.log_metrics
 
 
 def log_rich(gv):
@@ -254,12 +285,20 @@ def main():
                         help='whether to use mlflow to store logs')
     parser.add_argument('--rich', action='store_true', default=False,
                         help='whether to show a rich display')
+    parser.add_argument('--simple', action='store_true', default=False,
+                        help='whether to use the simple display method')
+    parser.add_argument('--display-all', action='store_true', default=False,
+                        help='whether to display all given data')
     args = parser.parse_args()
 
     with given() as gv:
 
-        if args.rich:
+        if args.display_all:
+            log_all(gv)
+        elif args.rich:
             log_rich(gv)
+        elif args.simple:
+            log_simple(gv)
         else:
             log_terminal(gv)
 

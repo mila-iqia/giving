@@ -118,10 +118,14 @@ def run(args):
 
 
 def log_all(gv):
+    """Log everything that is given. This is useful for debugging."""
     gv.display()
 
 
 def log_simple(gv):
+    """Log a few select fields."""
+
+    # List of fields we will display
     to_display = [
         "mode",
         "batch_idx",
@@ -129,55 +133,150 @@ def log_simple(gv):
         "test_loss",
         "correct",
     ]
-    data = (
-        gv.where("train_loss").throttle(0.5)
-        | gv.where("test_loss")
-    )
+
+    # The | operator merges two streams, here we have
+    # * The stream of train_loss entries, throttled to one every 0.5 seconds
+    # * The stream of test_loss entries, not throttled
+    data = gv.where("train_loss").throttle(0.5) | gv.where("test_loss")
+
+    # Only keep the keys we want to display, and then display them
     data.keep(*to_display).display()
 
 
 def log_terminal(gv):
+    """Custom logging on the terminal."""
+
+    # Install wrappers around the train and test wrap_inherits
     @gv.kwrap("train")
     @gv.kwrap("test")
     def _(mode):
+        # Printed before we enter the block
         print(f"Start {mode}")
         yield
+        # Printed after we exit the block
         print(f"End {mode}")
 
+    # Take entries that contain train_loss, then every 0.5 seconds, do:
     @gv.where("train_loss").throttle(0.5).ksubscribe
     def _(batch_idx, batch_size, length, epoch, train_loss):
+        # Every named argument corresponds to an entry in the dictionary
+        # produced by give(). batch_idx and train_loss are given together
+        # at the same time, whereas batch_size, length and epoch are also
+        # given because of wrap_inherit
         n = (batch_idx + 1) * batch_size
         progress = f"{n}/{length} {n / length:.0%}"
         print(
-            f"  Train Epoch #{epoch} [{progress}] Loss: {train_loss.item():.6f}"
+            f"  Train Epoch #{epoch} [{progress}] Loss: {train_loss:.6f}"
         )
 
-    @gv.where("batch_idx", mode="test").throttle(0.5).ksubscribe
-    def _(batch_idx, batch_size, length, epoch):
+    # Now we will do the same thing for test_loss, but differently.
+    # Use whichever technique fits your brain better :)
+
+    def _progress(batch_idx, batch_size, length):
         n = (batch_idx + 1) * batch_size
-        progress = f"{n}/{length} {n / length:.0%}"
-        print(
-            f"  Test Epoch #{epoch} [{progress}]"
-        )
+        return f"{n}/{length} {n / length:.0%}"
 
+    # * test_loss is only provided at the end of the test
+    # * augment() adds a key computed from the others
+    # * print() takes a format string (but no f prefix!)
+    gv \
+        .where("batch_idx", mode="test") \
+        .throttle(0.5) \
+        .augment(progress=_progress) \
+        .print("  Test Epoch #{epoch} [{progress}]")
+
+    # These are given at the end of the test block
     @gv.where("test_loss", "correct").ksubscribe
     def _(test_loss, correct):
         print(f"  Test loss: {test_loss:.6f}")
         print(f"  Accuracy:  {correct:.0%}")
 
 
+def log_rich(gv):
+    """Create a simple terminal dashboard using rich.
+
+    This displays a live table of the last value for everything given,
+    with a progress bar for the current task under it.
+    """
+
+    from rich.progress import Progress
+    from rich.live import Live
+    from rich.table import Table
+    from rich.pretty import Pretty
+    from rich.console import Group
+
+    # Current rows are stored here
+    rows = {}
+
+    # First, a table with the latest value of everything that was given
+    table = Table.grid(padding=(0, 3, 0, 0))
+    table.add_column("key", style="bold green")
+    table.add_column("value")
+
+    # Below, a progress bar for the current task (train or test)
+    progress = Progress(auto_refresh=False)
+    current_task = progress.add_task("----")
+
+    # Group them
+    grp = Group(table, progress)
+
+    # This will wrap Live around the run block (the whole main function)
+    gv.wrap("run", Live(grp, refresh_per_second=4))
+
+    # This refreshes the progress bar when we change task
+    @gv.kwrap("train")
+    @gv.kwrap("test")
+    def _(epoch, length, mode):
+        # Note: the difference between wrap and kwrap is that kwrap
+        # takes a function that passes the data as keyword arguments,
+        # whereas wrap passes no arguments.
+        descr = f"Epoch #{epoch}" if mode == "train" else "Test"
+        progress.reset(current_task, total=length, description=descr)
+        yield
+
+    # This sets the progress bar's completion meter
+    @gv.where("batch_idx").ksubscribe
+    def _(batch_idx, batch_size):
+        progress.update(current_task, completed=batch_idx * batch_size)
+
+    # This updates the table every time we get new values
+    @gv.subscribe
+    def _(values):
+        for k, v in values.items():
+            if isinstance(v, torch.Tensor):
+                # Some special processing for torch.Tensor, we will
+                # only display shape and type if it's not a scalar
+                if v.shape:
+                    v = (v.shape, v.dtype)
+                else:
+                    v = v.item()
+            if k in rows:
+                rows[k]._object = v
+            else:
+                rows[k] = Pretty(v)
+                table.add_row(k, rows[k])
+
+
 def log_wandb(gv, args):
+    """Log data into Weights and Biases."""
+
+    # Only import if needed :)
     import wandb
 
+    # Initialize the project
     entity, project = args.wandb.split(":")
-
     wandb.init(project=project, entity=entity, config=vars(args))
 
+    # Watch the model's weights. We only do it the first time we see the model.
     gv["?model"].first() >> wandb.watch
+
+    # Log train_loss, test_loss and correct (see the plots in the wandb dash)
     gv.keep("train_loss", "test_loss", "correct") >> wandb.log
 
 
 def log_mlflow(gv, args):
+    """Log data into MLFlow."""
+
     import mlflow
 
     mlflow.log_params(vars(args))
@@ -186,6 +285,8 @@ def log_mlflow(gv, args):
 
 
 def log_comet(gv, args):
+    """Log data into CometML."""
+
     import comet_ml
 
     entity, project, api_key = args.comet.split(":")
@@ -200,58 +301,15 @@ def log_comet(gv, args):
 
     experiment.log_parameters(vars(args))
 
+    # CometML uses context managers, which we can conveniently plug in here
     gv.wrap("train", experiment.train)
     gv.wrap("test", experiment.test)
 
+    # Set epoch and step whenever we give them
     gv["?epoch"] >> experiment.set_epoch
     gv["?batch_idx"] >> experiment.set_step
 
     gv.keep("train_loss", "test_loss", "correct") >> experiment.log_metrics
-
-
-def log_rich(gv):
-    from rich.progress import Progress
-    from rich.live import Live
-    from rich.table import Table
-    from rich.pretty import Pretty
-
-    rows = {}
-    exclude = ["$wrap"]
-
-    def update(values):
-        for k, v in values.items():
-            if isinstance(v, torch.Tensor):
-                v = (v.shape, v.dtype)
-            if k in exclude:
-                continue
-            if k in rows:
-                rows[k]._object = v
-            else:
-                rows[k] = Pretty(v)
-                table.add_row(k, rows[k])
-
-    table = Table.grid(padding=(0, 3, 0, 0))
-    table.add_column("key", style="bold green")
-    table.add_column("value")
-
-    progress = Progress(auto_refresh=False)
-    task = progress.add_task("----")
-    table.add_row("progress", progress)
-
-    @gv.kwrap("train")
-    @gv.kwrap("test")
-    def _(epoch, length, mode):
-        descr = f"Epoch #{epoch}" if mode == "train" else "Test"
-        progress.reset(task, total=length, description=descr)
-        yield
-
-    gv.wrap("run", Live(table, refresh_per_second=4))
-
-    @gv.where("batch_idx").ksubscribe
-    def _(batch_size):
-        progress.advance(task, batch_size)
-
-    gv >> update
 
 
 def main():

@@ -1,3 +1,5 @@
+import sys
+
 from giving import give, given
 
 
@@ -17,8 +19,8 @@ def bisect(arr, key):
     return lo + 1
 
 
-def main():
-    bisect(list(range(1000)), 742)
+def main(n):
+    bisect(list(range(1000)), n)
 
 
 def rich_display(gv):
@@ -50,4 +52,4 @@ if __name__ == "__main__":
         rich_display(gv)
 
         with give.wrap("main"):
-            main()
+            main(int(sys.argv[1]) if len(sys.argv) >= 2 else 742)

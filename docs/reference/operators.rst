@@ -1,4 +1,6 @@
 
+.. _OperatorList:
+
 giving.operators
 ================
 

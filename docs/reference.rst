@@ -4,7 +4,7 @@ Reference
 .. toctree::
    :maxdepth: 3
 
-   reference/core.rst
-   reference/obs.rst
-   reference/operators.rst
-   reference/utils.rst
+   ref-core.rst
+   ref-obs.rst
+   ref-operators.rst
+   ref-utils.rst

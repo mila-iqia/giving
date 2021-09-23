@@ -15,10 +15,10 @@ The following operators are added in ``giving`` in order to better handle the ki
 :func:`~giving.operators.format`, 
 :func:`~giving.operators.getitem`, 
 :func:`~giving.operators.group_wrap`, 
-:func:`~giving.operators.kcombine`, 
 :func:`~giving.operators.keep`, 
 :func:`~giving.operators.kfilter`, 
 :func:`~giving.operators.kmap`, 
+:func:`~giving.operators.kmerge`,
 :func:`~giving.operators.roll`, 
 :func:`~giving.operators.sole`,
 :func:`~giving.operators.tag`, 
@@ -93,10 +93,10 @@ The main difference is the ``scan`` argument, which reinterprets the reduction a
     .. autofunction:: ignore_elements
     .. autofunction:: is_empty
     .. autofunction:: join
-    .. autofunction:: kcombine
     .. autofunction:: keep
     .. autofunction:: kfilter
     .. autofunction:: kmap
+    .. autofunction:: kmerge
     .. autofunction:: last
     .. autofunction:: last_or_default
     .. autofunction:: map

@@ -245,10 +245,6 @@ giving.obs
 
             See :func:`~giving.operators.join`
 
-        .. function:: kcombine(...)
-
-            See :func:`~giving.operators.kcombine`
-
         .. function:: keep(...)
 
             See :func:`~giving.operators.keep`
@@ -260,6 +256,10 @@ giving.obs
         .. function:: kmap(...)
 
             See :func:`~giving.operators.kmap`
+
+        .. function:: kmerge(...)
+
+            See :func:`~giving.operators.kmerge`
 
         .. function:: last(...)
 

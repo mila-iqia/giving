@@ -462,23 +462,6 @@ def group_wrap(name, **conditions):
     return oper
 
 
-def kcombine():
-    """Incrementally merge the dictionaries in the stream.
-
-    .. marble::
-        :alt: kcombine
-
-        --x1--y2-----x3-----z4-------|
-        [         kcombine()         ]
-        --x1--x1,y2--x3,y2--x3,y2,z4-|
-    """
-
-    def _combine(last, new):
-        return {**last, **new}
-
-    return rxop.scan(_combine)
-
-
 def keep(*keys, **remap):
     """Keep certain dict keys and remap others.
 
@@ -570,6 +553,34 @@ def kmap(_fn=None, **_fns):
     else:
         fns = {k: lax_function(fn) for k, fn in _fns.items()}
         return rxop.map(lambda data: {k: fn(**data) for k, fn in fns.items()})
+
+
+def kmerge(scan=False):
+    """Merge the dictionaries in the stream.
+
+    .. marble::
+        :alt: kmerge
+
+        --x1--y2--x3--z4-|
+        [          kmerge()        ]
+        -----------------x3,y2,z4--|
+
+    .. marble::
+        :alt: kmerge2
+
+        --x1--y2-----x3-----z4-------|
+        [      kmerge(scan=True)     ]
+        --x1--x1,y2--x3,y2--x3,y2,z4-|
+    """
+
+    def _merge(last, new):
+        return {**last, **new}
+
+    if scan:
+        assert isinstance(scan, bool)
+        return rxop.scan(_merge)
+    else:
+        return rxop.reduce(_merge)
 
 
 @reducer

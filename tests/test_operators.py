@@ -490,15 +490,18 @@ def test_as():
         assert results == [{"z": 1}, {"z": 2}]
 
 
-def test_kcombine():
+def test_kmerge():
     with given() as gv:
-        results = gv.kcombine().accum()
+        results1 = gv.kmerge().accum()
+        results2 = gv.kmerge(scan=True).accum()
 
         give(a=1)
         give(b=2)
         give(b=3, c=4)
 
-    assert results == [
+    assert results1 == [{"a": 1, "b": 3, "c": 4}]
+
+    assert results2 == [
         {"a": 1},
         {"a": 1, "b": 2},
         {"a": 1, "b": 3, "c": 4},

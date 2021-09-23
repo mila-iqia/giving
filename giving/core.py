@@ -300,14 +300,14 @@ class Giver:
     def wrap_inherit(self, name, **keys):
         """Shorthand for using wrap and inherit.
 
-        .. code-block:: python:
+        .. code-block:: python
 
             with give.wrap_inherit("W", a=1):
                 ...
 
         Is equivalent to:
 
-        .. code-block:: python:
+        .. code-block:: python
 
             with give.inherit(a=1):
                 with give.wrap("W"):

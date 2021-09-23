@@ -65,8 +65,12 @@ giving.core
 
                 do_things()
 
-    .. autofunction:: Given
-    .. autofunction:: Giver
+    .. autoclass:: Given
+        :members:
+    .. autoclass:: Giver
+        :members:
     .. autofunction:: make_give
     .. autofunction:: register_special
     .. autofunction:: resolve
+    .. autoclass:: LinePosition
+        :members:

@@ -669,9 +669,12 @@ class max:
 def sole(*, keep_key=False, exclude=[]):
     """Extract values from a stream of dicts with one entry each.
 
-    --x1--y2--y3--z4--|
-    [     sole()      ]
-    --1---2---3---4---|
+    .. marble::
+        :alt: sole
+
+        --x1--y2--y3--z4--|
+        [     sole()      ]
+        --1---2---3---4---|
 
     If, after removing keys from the exclusion set, any dict is empty
     or has a length superior to 1, that is an error.

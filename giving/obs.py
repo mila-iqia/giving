@@ -127,6 +127,9 @@ class ObservableProxy:
             gvt.display()
             gvt.breakword()
 
+        The above will display words next to each entry. Set the BREAKWORD environment
+        to one of these words to set a breakpoint when it is printed.
+
         Arguments:
             skip:
                 A list of globs corresponding to modules to skip during debugging,

@@ -106,19 +106,38 @@ def affix(**streams):
                 xpy=obs["x", "y"].starmap(lambda x, y: x + y),
             )
 
+        Or:
+
+        .. code-block:: python
+
+            obs.where("x", "y").affix(
+                # o is obs.where("x", "y")
+                minx=lambda o: o["x"].min(scan=True),
+                xpy=lambda o: o["x", "y"].starmap(lambda x, y: x + y),
+            )
+
     Arguments:
         streams: A mapping from extra keys to add to the dicts to Observables
-            that generate the values.
+            that generate the values, or to functions of one argument that will
+            be called with the main Observable.
     """
+    from .obs import ObservableProxy
 
     keys = list(streams.keys())
     values = list(streams.values())
 
-    def merge(elems):
-        main, *rest = elems
-        return {**main, **dict(zip(keys, rest))}
+    def create(source):
+        newobs = [
+            v if hasattr(v, "subscribe") else v(ObservableProxy(source)) for v in values
+        ]
 
-    return rxop.pipe(rxop.zip(*values), rxop.map(merge))
+        def merge(elems):
+            main, *rest = elems
+            return {**main, **dict(zip(keys, rest))}
+
+        return rxop.pipe(rxop.zip(*newobs), rxop.map(merge))(source)
+
+    return create
 
 
 def augment(**fns):

@@ -402,6 +402,18 @@ def test_affix():
     assert results == [{"a": x, "b": x * x} for x in values]
 
 
+def test_affix2():
+    values = [1, 2, 3, 4]
+
+    with given() as gv:
+        results = gv.where("a").affix(asquare=lambda o: o.kmap(lambda a: a * a)).accum()
+
+        give(b=7)
+        things(*values)
+
+    assert results == [{"a": x, "asquare": x * x} for x in values]
+
+
 def varia():
     give(x=1)
     give(x=2, y=True)

@@ -261,6 +261,10 @@ giving.obs
 
             See :func:`~giving.operators.kmerge`
 
+        .. function:: kscan(...)
+
+            See :func:`~giving.operators.kscan`
+
         .. function:: last(...)
 
             See :func:`~giving.operators.last`

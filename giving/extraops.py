@@ -352,22 +352,36 @@ class count:
             return self.reduce(last, new)
 
 
-def format(string):
+def format(string, skip_missing=False):
     """Format an object using a format string.
 
     Arguments:
         string: The format string.
+        skip_missing: Whether to ignore KeyErrors due to missing entries in the format.
     """
+    SKIP = object()
 
     def _fmt(x):
         if isinstance(x, dict):
-            return string.format(**x)
+            if skip_missing:
+                try:
+                    return string.format(**x)
+                except KeyError:
+                    return SKIP
+            else:
+                return string.format(**x)
         elif isinstance(x, (list, tuple)):
             return string.format(*x)
         else:
             return string.format(x)
 
-    return rxop.map(_fmt)
+    if skip_missing:
+        return rxop.pipe(
+            rxop.map(_fmt),
+            rxop.filter(lambda x: x is not SKIP),
+        )
+    else:
+        return rxop.map(_fmt)
 
 
 def getitem(*keys, strict=False):
@@ -581,6 +595,11 @@ def kmerge(scan=False):
         return rxop.scan(_merge)
     else:
         return rxop.reduce(_merge)
+
+
+def kscan():
+    """Alias for ``kmerge(scan=True)``."""
+    return kmerge(scan=True)
 
 
 @reducer

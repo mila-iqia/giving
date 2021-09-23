@@ -83,6 +83,17 @@ def test_format3():
         ]
 
 
+def test_format4():
+    with given() as gv:
+        results = gv.format("{a} {b}", skip_missing=True).accum()
+
+        give(a=1)
+        give(b=2)
+        give(a=3, b=4)
+
+        assert results == ["3 4"]
+
+
 def test_kmap():
     with given() as gv:
         results = []
@@ -493,7 +504,7 @@ def test_as():
 def test_kmerge():
     with given() as gv:
         results1 = gv.kmerge().accum()
-        results2 = gv.kmerge(scan=True).accum()
+        results2 = gv.kscan().accum()
 
         give(a=1)
         give(b=2)

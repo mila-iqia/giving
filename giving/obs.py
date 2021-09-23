@@ -230,15 +230,16 @@ class ObservableProxy:
         """
         return self.wrap(name, fn, pass_keys=True, return_function=return_function)
 
-    def print(self, format=None):
+    def print(self, format=None, skip_missing=False):
         """Print each element of the stream.
 
         Arguments:
             format: A format string as would be used with ``str.format``.
+            skip_missing: Whether to ignore KeyErrors due to missing entries in the format.
         """
         obs = self
         if format is not None:
-            obs = self.format(format)
+            obs = self.format(format, skip_missing=skip_missing)
         return obs.subscribe(print)
 
     def wrap(self, name, fn=None, pass_keys=False, return_function=False):
@@ -490,6 +491,7 @@ class ObservableProxy:
     kfilter = _opmethod(op.kfilter)
     kmap = _opmethod(op.kmap)
     kmerge = _opmethod(op.kmerge)
+    kscan = _opmethod(op.kscan)
     norepeat = _opmethod(op.norepeat)
     roll = _opmethod(op.roll)
     sole = _opmethod(op.sole)

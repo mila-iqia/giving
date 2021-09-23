@@ -140,6 +140,7 @@ from .extraops import (  # noqa: F401
     kfilter,
     kmap,
     kmerge,
+    kscan,
     max,
     min,
     roll,

@@ -19,6 +19,7 @@ The following operators are added in ``giving`` in order to better handle the ki
 :func:`~giving.operators.kfilter`, 
 :func:`~giving.operators.kmap`, 
 :func:`~giving.operators.kmerge`,
+:func:`~giving.operators.kscan`,
 :func:`~giving.operators.roll`, 
 :func:`~giving.operators.sole`,
 :func:`~giving.operators.tag`, 
@@ -97,6 +98,7 @@ The main difference is the ``scan`` argument, which reinterprets the reduction a
     .. autofunction:: kfilter
     .. autofunction:: kmap
     .. autofunction:: kmerge
+    .. autofunction:: kscan
     .. autofunction:: last
     .. autofunction:: last_or_default
     .. autofunction:: map

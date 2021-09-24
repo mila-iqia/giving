@@ -1,9 +1,16 @@
 
-Getting started
-===============
+Motivation
+==========
 
 Giving implements what we may call **functional reactive logging**. The basic idea is that you can log objects anywhere in your program, as easily as you can print them. These objects are then aggregated by Giving into **Observable streams of dictionaries** with which you can do pretty much :ref:`anything you want<OperatorList>`, including printing them.
 
+The main advantage of Giving is *decoupling*: calls to ``give`` in your code produce a stream of raw data, and then that stream can be manipulated in powerful ways to create advanced displays, to forward data to an external server, and so on.
+
+Using ``give`` uniformly for logging data also allows deferring the decision of what to log where. For instance, you might want to log some piece of data continuously, some other piece of data every 30 seconds, and you might want to send another into a web service. And you might want to change these decisions later on.
+
+
+Getting started
+===============
 
 Install
 -------

@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "giving"
-version = "0.1.4"
+version = "0.2.0"
 description = "Reactive logging"
 authors = ["Olivier Breuleux <breuleux@gmail.com>"]
 license = "MIT"

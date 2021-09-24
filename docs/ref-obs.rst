@@ -9,7 +9,9 @@ giving.obs
         .. automethod:: accum
         .. automethod:: breakpoint
         .. automethod:: breakword
+        .. automethod:: copy
         .. automethod:: display
+        .. automethod:: fail
         .. automethod:: give
         .. automethod:: ksubscribe
         .. automethod:: kwrap

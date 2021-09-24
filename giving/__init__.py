@@ -12,5 +12,5 @@ from .core import (
     resolve,
 )
 from .extraops import reducer
-from .obs import ObservableProxy
+from .obs import Failure, ObservableProxy
 from .version import version

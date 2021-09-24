@@ -15,6 +15,10 @@ def _opmethod(operator):
     return f
 
 
+class Failure(Exception):
+    pass
+
+
 class ObservableProxy:
     """Wraps an Observable_ to provide a richer interface.
 
@@ -157,6 +161,21 @@ class ObservableProxy:
         if breakword:  # pragma: no cover
             self.breakword(word=breakword, skip=skip)
         return sub
+
+    def fail(self, exc_type=Failure):
+        """Raise an exception if the stream produces anything.
+
+        Arguments:
+            exc_type:
+                The exception type to raise. Will be passed the next data
+                element, and the result is raised. Defaults to
+                :class:`~giving.obs.Failure`.
+        """
+
+        def _fail(data):
+            raise exc_type(data)
+
+        return self.subscribe(_fail)
 
     def give(self, *keys, **extra):
         """``give`` each element.

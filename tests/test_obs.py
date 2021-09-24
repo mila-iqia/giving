@@ -2,7 +2,7 @@ import pytest
 from rx import of
 
 from giving import give, given
-from giving.obs import ObservableProxy
+from giving.obs import Failure, ObservableProxy
 
 from .test_operators import things
 
@@ -93,6 +93,26 @@ def test_accum():
     assert results1 == [11, 22, 11, 33]
     assert results2 == [55, 11, 22, 11, 33]
     assert results3 == {11, 22, 33}
+
+
+def test_fail():
+    with given() as gv:
+        gv["a"].filter(lambda a: a == 2).fail()
+
+        with pytest.raises(Failure):
+            things(1, 2, 3)
+
+    with given() as gv:
+        gv["a"].filter(lambda a: a == 2).fail(ValueError)
+
+        with pytest.raises(ValueError):
+            things(1, 2, 3)
+
+    with given() as gv:
+        gv["a"].filter(lambda a: a == 1234).fail()
+
+        things(1, 2, 3)
+        things(4, 5, 6)
 
 
 def test_merge():

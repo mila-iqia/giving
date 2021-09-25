@@ -32,6 +32,10 @@ class ObservableProxy:
         assert not isinstance(obs, ObservableProxy)
         self.obs = obs
 
+    def copy(self, new_obs):
+        """Copy this observable with a new underlying observable."""
+        return type(self)(new_obs)
+
     ###################
     # Wrapped methods #
     ###################
@@ -41,7 +45,7 @@ class ObservableProxy:
 
         Returns: An ObservableProxy.
         """
-        return type(self)(self.obs.pipe(*args, **kwargs))
+        return self.copy(self.obs.pipe(*args, **kwargs))
 
     def subscribe(self, *args, **kwargs):
         """Subscribe a function to this Observable stream.

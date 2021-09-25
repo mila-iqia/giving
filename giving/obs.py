@@ -177,6 +177,20 @@ class ObservableProxy:
 
         return self.subscribe(_fail)
 
+    def fail_if_empty(self, exc_type=Failure):
+        """Raise an exception if the stream is empty.
+
+        Arguments:
+            exc_type:
+                The exception type to raise. Defaults to :class:`~giving.obs.Failure`.
+        """
+
+        def _fail(is_empty):
+            if is_empty:
+                raise exc_type(is_empty)
+
+        return self.is_empty().subscribe(_fail)
+
     def give(self, *keys, **extra):
         """``give`` each element.
 

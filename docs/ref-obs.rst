@@ -12,6 +12,7 @@ giving.obs
         .. automethod:: copy
         .. automethod:: display
         .. automethod:: fail
+        .. automethod:: fail_if_empty
         .. automethod:: give
         .. automethod:: ksubscribe
         .. automethod:: kwrap

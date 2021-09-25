@@ -115,6 +115,17 @@ def test_fail():
         things(4, 5, 6)
 
 
+def test_fail_if_empty():
+    with pytest.raises(Failure):
+        with given() as gv:
+            gv["?b"].fail_if_empty()
+            things(1, 2, 3)
+
+    with given() as gv:
+        gv["?a"].fail_if_empty()
+        things(1, 2, 3)
+
+
 def test_merge():
     with given() as gv:
         results = (gv["?a"] | gv["?b"] | gv["?c"]).accum()

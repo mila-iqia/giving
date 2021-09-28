@@ -2,8 +2,11 @@ import inspect
 from contextlib import contextmanager
 from functools import partial, wraps
 
-from . import operators
+import rx
+
+from . import operators, operators as op
 from .executors import Breakpoint, Displayer
+from .gvr import Giver, global_context
 from .utils import lax_function
 
 
@@ -98,7 +101,7 @@ class ExtendedInterface:
             exc_type:
                 The exception type to raise. Will be passed the next data
                 element, and the result is raised. Defaults to
-                :class:`~giving.obs.Failure`.
+                :class:`~giving.gvn.Failure`.
         """
 
         def _fail(data):
@@ -111,7 +114,7 @@ class ExtendedInterface:
 
         Arguments:
             exc_type:
-                The exception type to raise. Defaults to :class:`~giving.obs.Failure`.
+                The exception type to raise. Defaults to :class:`~giving.gvn.Failure`.
         """
 
         def _fail(is_empty):
@@ -131,8 +134,6 @@ class ExtendedInterface:
             keys: Key(s) under which to give the elements.
             extra: Extra key/value pairs to give along with the rest.
         """
-        from .core import Giver
-
         giver = Giver(keys=keys, extra=extra)
 
         if len(keys) == 0:
@@ -397,3 +398,49 @@ class ObservableProxy(ExtendedInterface):
 
     def subscribe_(self, *args, **kwargs):
         return self.obs.subscribe_(*args, **kwargs)
+
+
+class Given:
+    """Context manager that yields an ObservableProxy for a block.
+
+    Upon entering, an :class:`~giving.gvn.ObservableProxy` is yielded,
+    and calls to ``give`` will trigger that Observable. Upon exiting,
+    the Observable is marked as completed, triggering reductions such
+    as ``min`` or ``sum``.
+
+    Arguments:
+        key: The key to extract, or None.
+        context:
+            The ContextVar to use to sync with ``give``.
+    """
+
+    def __init__(self, key=None, context=global_context):
+        self.key = key
+        self.token = self.observers = None
+        self.context = context
+
+    def __enter__(self):
+        self.observers = []
+
+        def make(observer, scheduler):
+            self.observers.append(observer)
+
+        src = rx.create(make)
+
+        def handler(values):
+            for obs in self.observers:
+                obs.on_next(values)
+
+        h = self.context.get()
+        self.token = self.context.set((*h, handler))
+
+        if isinstance(self.key, str):
+            src = src.pipe(op.getitem(self.key))
+
+        return ObservableProxy(src)
+
+    def __exit__(self, exc_type=None, exc=None, tb=None):
+        for obs in self.observers:
+            obs.on_completed()
+        self.context.reset(self.token)
+        self.token = self.observers = None

@@ -1,16 +1,6 @@
 from . import operators as op
-from .core import (
-    Given,
-    Giver,
-    accumulate,
-    give,
-    givelike,
-    given,
-    giver,
-    make_give,
-    register_special,
-    resolve,
-)
+from .api import accumulate, give, given, make_give
 from .extraops import reducer
-from .obs import Failure, ObservableProxy
+from .gvn import Failure, Given, ObservableProxy
+from .gvr import Giver, giver, global_context, register_special, resolve
 from .version import version

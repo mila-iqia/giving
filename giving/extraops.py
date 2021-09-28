@@ -121,7 +121,7 @@ def affix(**streams):
             that generate the values, or to functions of one argument that will
             be called with the main Observable.
     """
-    from .obs import ObservableProxy
+    from .gvn import ObservableProxy
 
     keys = list(streams.keys())
     values = list(streams.values())
@@ -469,7 +469,7 @@ def group_wrap(name, **conditions):
             dictionary of the wrap statement, or to a predicate function on the
             value.
     """
-    from .obs import ObservableProxy
+    from .gvn import ObservableProxy
 
     def oper(source):
         opens = rxop.pipe(
@@ -732,9 +732,9 @@ def tag(group="", field="$word", group_field="$group"):
     attempt to do ``setattr(item, field, <new_word>)``.
 
     These tags are displayed specially by the
-    :meth:`~giving.obs.ObservableProxy.display` method and they
+    :meth:`~giving.gvn.ObservableProxy.display` method and they
     can be used to determine breakpoints with the
-    :meth:`~giving.obs.ObservableProxy.breakword` method.
+    :meth:`~giving.gvn.ObservableProxy.breakword` method.
 
     Arguments:
         group: An arbitrary group name that corresponds to an independent

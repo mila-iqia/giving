@@ -4,19 +4,10 @@ import time
 from collections import namedtuple
 from contextlib import contextmanager
 from contextvars import ContextVar
-from functools import partial
 from itertools import count
-from types import SimpleNamespace
 
-import rx
 from varname import ImproperUseError, VarnameRetrievingError, argname, varname
 from varname.utils import get_node
-
-from . import operators as op
-from .obs import ObservableProxy
-from .utils import keyword_decorator
-
-ABSENT = object()
 
 global_context = ContextVar("global_context", default=())
 global_inherited = ContextVar("global_inherited", default={})
@@ -273,10 +264,10 @@ class Giver:
         at the beginning of it gives the same ``$wrap`` but with step="end"
         at the end of the block.
 
-        :meth:`giving.obs.ObservableProxy.wrap` is the corresponding
+        :meth:`giving.gvn.ObservableProxy.wrap` is the corresponding
         method on the ObservableProxy returned by ``given()`` and it
         can be used to wrap another context manager on the same block.
-        :meth:`giving.obs.ObservableProxy.group_wrap` is another method
+        :meth:`giving.gvn.ObservableProxy.group_wrap` is another method
         that uses the sentinels produced by ``wrap``.
 
         .. code-block:: python
@@ -336,6 +327,25 @@ class Giver:
         for handler in self.context.get():
             handler(values)
 
+    def variant(self, fn):
+        """Create a version of give that transforms the data.
+
+        .. code-block:: python
+
+            @give.variant
+            def give_image(data):
+                return {"image": data}
+
+            ...
+
+            give_image(x, y)  # gives {"image": {"x": x, "y": y}}
+
+        Arguments:
+            fn: A function from a dict to a dict.
+            give: The base give function to wrap (defaults to global give).
+        """
+        return self.copy(transform=fn)
+
     def __call__(self, *args, **values):
         """Give the args and values."""
         h = self.context.get()
@@ -375,112 +385,3 @@ def giver(*keys, **extra):
     normal = [k for k in keys if not k.startswith("$")]
     special = [k for k in keys if k.startswith("$")]
     return Giver(keys=normal, special=special, extra=extra)
-
-
-class Given:
-    """Context manager that yields an ObservableProxy for a block.
-
-    Upon entering, an :class:`~giving.obs.ObservableProxy` is yielded,
-    and calls to ``give`` will trigger that Observable. Upon exiting,
-    the Observable is marked as completed, triggering reductions such
-    as ``min`` or ``sum``.
-
-    Arguments:
-        key: The key to extract, or None.
-        context:
-            The ContextVar to use to sync with ``give``.
-    """
-
-    def __init__(self, key=None, context=global_context):
-        self.key = key
-        self.token = self.observers = None
-        self.context = context
-
-    def __enter__(self):
-        self.observers = []
-
-        def make(observer, scheduler):
-            self.observers.append(observer)
-
-        src = rx.create(make)
-
-        def handler(values):
-            for obs in self.observers:
-                obs.on_next(values)
-
-        h = self.context.get()
-        self.token = self.context.set((*h, handler))
-
-        if isinstance(self.key, str):
-            src = src.pipe(op.getitem(self.key))
-
-        return ObservableProxy(src)
-
-    def __exit__(self, exc_type=None, exc=None, tb=None):
-        for obs in self.observers:
-            obs.on_completed()
-        self.context.reset(self.token)
-        self.token = self.observers = None
-
-
-def make_give(context=None):
-    """Create independent give/given/accumulate.
-
-    The resulting functions share their own ``ContextVar``, which
-    makes them independent from the main instances of ``give`` and
-    ``given``.
-
-    Arguments:
-        context: The ``ContextVar`` set by ``given`` and used by ``give``,
-            or ``None`` if a new ``ContextVar`` is to be created.
-
-    Returns:
-        A SimpleNamespace with attributes ``context``, ``give``,
-        ``given`` and ``accumulate``.
-    """
-
-    context = context or ContextVar("context", default=())
-    give = Giver(context=context)
-    given = partial(Given, context=context)
-
-    @contextmanager
-    def accumulate(key=None):
-        results = []
-        with given(key) as gv:
-            gv.subscribe(results.append)
-            yield results
-
-    return SimpleNamespace(
-        context=context,
-        give=give,
-        given=given,
-        accumulate=accumulate,
-    )
-
-
-_global_given = make_give(context=global_context)
-
-give = _global_given.give
-given = _global_given.given
-accumulate = _global_given.accumulate
-
-
-@keyword_decorator
-def givelike(fn, give=give):
-    """Create a version of give that transforms the data.
-
-    .. code-block:: python
-
-        @givelike
-        def give_image(data):
-            return {"image": data}
-
-        ...
-
-        give_image(x, y)  # gives {"image": {"x": x, "y": y}}
-
-    Arguments:
-        fn: A function from a dict to a dict.
-        give: The base give function to wrap (defaults to global give).
-    """
-    return give.copy(transform=fn)

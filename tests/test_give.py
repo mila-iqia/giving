@@ -1,8 +1,8 @@
 import pytest
 from varname import ImproperUseError, VarnameRetrievingError
 
-from giving import accumulate, give, givelike, given, giver
-from giving.core import LinePosition, register_special, resolve
+from giving import accumulate, give, given, giver
+from giving.gvr import LinePosition, register_special, resolve
 
 
 def bisect(arr, key):
@@ -328,8 +328,8 @@ def test_wrap2():
     assert results == ["(", 10, "<", 20, ">", 30, ")"]
 
 
-def test_givelike():
-    @givelike
+def test_variant():
+    @give.variant
     def stuff(data):
         return {"stuff": data, "transformed": True}
 
@@ -349,10 +349,10 @@ def test_givelike():
     ]
 
 
-def test_givelike_2():
+def test_variant_2():
     give2 = giver("zazz")
 
-    @givelike(give=give2)
+    @give2.variant
     def stuff(data):
         return {"stuff": data, "transformed": True}
 

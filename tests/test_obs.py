@@ -2,7 +2,7 @@ import pytest
 from rx import of
 
 from giving import give, given
-from giving.obs import Failure, ObservableProxy
+from giving.gvn import Failure, ObservableProxy
 
 from .test_operators import things
 

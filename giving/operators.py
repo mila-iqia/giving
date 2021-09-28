@@ -1,5 +1,4 @@
 from rx.operators import (  # noqa: F401
-    NotSet,
     all,
     amb,
     as_observable,
@@ -125,32 +124,7 @@ from rx.operators import (  # noqa: F401
     zip_with_list,
 )
 
-from .extraops import (  # noqa: F401
-    affix,
-    as_,
-    augment,
-    average,
-    average_and_variance,
-    collect_between,
-    count,
-    format,
-    getitem,
-    group_wrap,
-    keep,
-    kfilter,
-    kmap,
-    kmerge,
-    kscan,
-    max,
-    min,
-    roll,
-    sole,
-    sum,
-    tag,
-    variance,
-    where,
-    where_any,
-)
+from .extraops import *  # noqa: F401, F403
 
 ###########
 # Aliases #
@@ -159,3 +133,6 @@ from .extraops import (  # noqa: F401
 
 norepeat = distinct_until_changed
 throttle = throttle_first
+
+
+__all__ = [k for k in globals().keys() if not k.startswith("_")]

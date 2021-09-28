@@ -841,3 +841,31 @@ def where_any(*keys):
         return isinstance(data, dict) and any(k in data for k in keys)
 
     return rxop.filter(_filt)
+
+
+__all__ = [
+    "affix",
+    "as_",
+    "augment",
+    "average",
+    "average_and_variance",
+    "collect_between",
+    "count",
+    "format",
+    "getitem",
+    "group_wrap",
+    "keep",
+    "kfilter",
+    "kmap",
+    "kmerge",
+    "kscan",
+    "max",
+    "min",
+    "roll",
+    "sole",
+    "sum",
+    "tag",
+    "variance",
+    "where",
+    "where_any",
+]

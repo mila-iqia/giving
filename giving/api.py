@@ -1,4 +1,3 @@
-from contextlib import contextmanager
 from contextvars import ContextVar
 from functools import partial
 from types import SimpleNamespace
@@ -27,18 +26,10 @@ def make_give(context=None):
     give = Giver(context=context)
     given = partial(Given, context=context)
 
-    @contextmanager
-    def accumulate(key=None):
-        results = []
-        with given(key) as gv:
-            gv.subscribe(results.append)
-            yield results
-
     return SimpleNamespace(
         context=context,
         give=give,
         given=given,
-        accumulate=accumulate,
     )
 
 
@@ -46,4 +37,3 @@ _global_given = make_give(context=global_context)
 
 give = _global_given.give
 given = _global_given.given
-accumulate = _global_given.accumulate

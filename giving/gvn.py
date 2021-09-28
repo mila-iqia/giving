@@ -4,7 +4,7 @@ from functools import partial, wraps
 
 import rx
 
-from . import operators, operators as op
+from . import operators
 from .executors import Breakpoint, Displayer
 from .gvr import Giver, global_context
 from .utils import lax_function
@@ -400,6 +400,25 @@ class ObservableProxy(ExtendedInterface):
         return self.obs.subscribe_(*args, **kwargs)
 
 
+class Stream:
+    def __init__(self):
+        self.observers = []
+
+        def make(observer, scheduler):
+            self.observers.append(observer)
+
+        src = rx.create(make)
+        self.source = ObservableProxy(src)
+
+    def push(self, data):
+        for obs in self.observers:
+            obs.on_next(data)
+
+    def complete(self):
+        for obs in self.observers:
+            obs.on_completed()
+
+
 class Given:
     """Context manager that yields an ObservableProxy for a block.
 
@@ -414,33 +433,18 @@ class Given:
             The ContextVar to use to sync with ``give``.
     """
 
-    def __init__(self, key=None, context=global_context):
-        self.key = key
-        self.token = self.observers = None
-        self.context = context
+    def __init__(self, context=global_context):
+        self._token = self._stream = None
+        self._context = context
 
     def __enter__(self):
-        self.observers = []
-
-        def make(observer, scheduler):
-            self.observers.append(observer)
-
-        src = rx.create(make)
-
-        def handler(values):
-            for obs in self.observers:
-                obs.on_next(values)
-
-        h = self.context.get()
-        self.token = self.context.set((*h, handler))
-
-        if isinstance(self.key, str):
-            src = src.pipe(op.getitem(self.key))
-
-        return ObservableProxy(src)
+        assert self._token is None
+        self._stream = strm = Stream()
+        h = self._context.get()
+        self._token = self._context.set((*h, strm.push))
+        return strm.source
 
     def __exit__(self, exc_type=None, exc=None, tb=None):
-        for obs in self.observers:
-            obs.on_completed()
-        self.context.reset(self.token)
-        self.token = self.observers = None
+        self._stream.complete()
+        self._context.reset(self._token)
+        self._token = self._stream = None

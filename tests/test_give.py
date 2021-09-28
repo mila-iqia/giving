@@ -1,8 +1,17 @@
+from contextlib import contextmanager
+
 import pytest
 from varname import ImproperUseError, VarnameRetrievingError
 
-from giving import accumulate, give, given, giver
+from giving import give, given, giver
 from giving.gvr import LinePosition, register_special, resolve
+
+
+@contextmanager
+def accumulate(key):
+    with given() as gv:
+        results = gv[f"?{key}"].accum()
+        yield results
 
 
 def bisect(arr, key):

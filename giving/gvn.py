@@ -14,8 +14,77 @@ class Failure(Exception):
     """Error type raised by fail() by default."""
 
 
-class ExtendedInterface:
+class ObservableProxy:
     """Defines a rich interface for an Observable."""
+
+    """Wraps an Observable_ to provide a richer interface.
+
+    .. _Observable: https://rxpy.readthedocs.io/en/latest/reference_observable.html
+
+    For convenience, all operators in :mod:`giving.operators` are
+    provided as methods on these objects.
+    """
+
+    def __init__(self, obs):
+        assert not isinstance(obs, ObservableProxy)
+        self.obs = obs
+
+    def _copy(self, new_obs):
+        """Copy this observable with a new underlying observable."""
+        return type(self)(new_obs)
+
+    ###################
+    # Wrapped methods #
+    ###################
+
+    def pipe(self, *args, **kwargs):
+        """Pipe one or more operators.
+
+        Returns: An ObservableProxy.
+        """
+        return self._copy(self.obs.pipe(*args, **kwargs))
+
+    def subscribe(self, *args, **kwargs):
+        """Subscribe a function to this Observable stream.
+
+        .. code-block:: python
+
+            with given() as gv:
+                gv.subscribe(print)
+
+                results = []
+                gv["x"].subscribe(results.append)
+
+                give(x=1)  # prints {"x": 1}
+                give(x=2)  # prints {"x": 2}
+
+                assert results == [1, 2]
+
+        Arguments:
+            observer:
+                The object that is to receive notifications.
+            on_error:
+                Action to invoke upon exceptional termination of the
+                observable sequence.
+            on_completed:
+                 Action to invoke upon graceful termination of the
+                 observable sequence.
+            on_next:
+                Action to invoke for each element in the observable
+                sequence.
+
+        Returns:
+            An object representing the subscription with a ``dispose()``
+            method to remove it.
+        """
+        return self.obs.subscribe(*args, **kwargs)
+
+    def subscribe_(self, *args, **kwargs):
+        return self.obs.subscribe_(*args, **kwargs)
+
+    #########################
+    # Special subscriptions #
+    #########################
 
     def accum(self, obj=None):
         """Accumulate into a list or set.
@@ -330,121 +399,118 @@ def _put_opmethods(cls, names):
         setattr(cls, name, _opmethod(operator))
 
 
-_put_opmethods(ExtendedInterface, operators.__all__)
+_operations = [op for op in operators.__all__ if op not in {"pipe"}]
+_put_opmethods(ObservableProxy, _operations)
 
 
-class ObservableProxy(ExtendedInterface):
-    """Wraps an Observable_ to provide a richer interface.
+class Given(ObservableProxy):
+    """Observable that streams the values given using ``give()``.
 
-    .. _Observable: https://rxpy.readthedocs.io/en/latest/reference_observable.html
+    Instances of Given must be activated as a context manager in order to
+    work, and each instance can only be activated once.
 
-    For convenience, all operators in :mod:`giving.operators` are
-    provided as methods on these objects.
-    """
+    .. code-block:: python
 
-    def __init__(self, obs):
-        assert not isinstance(obs, ObservableProxy)
-        self.obs = obs
+        # Instantiate a Given and set up a pipeline of operations
+        gv = given()
+        gv["?x"].max().print("max(x) = {}")
 
-    def _copy(self, new_obs):
-        """Copy this observable with a new underlying observable."""
-        return type(self)(new_obs)
+        # Calls to give() do nothing yet
+        give(x=12345)
 
-    ###################
-    # Wrapped methods #
-    ###################
+        # We activate gv using a ``with`` statement:
+        with gv:
+            # NOW, calls to give() are fed into the pipeline
+            give(x=1, y=1)
 
-    def pipe(self, *args, **kwargs):
-        """Pipe one or more operators.
+            # You can still add to the pipeline, but the new operations
+            # will only pick up future calls to give()
+            gv["?y"].min().print("min(y) = {}")
 
-        Returns: An ObservableProxy.
-        """
-        return self._copy(self.obs.pipe(*args, **kwargs))
+            give(x=2, y=2)
+            ...
 
-    def subscribe(self, *args, **kwargs):
-        """Subscribe a function to this Observable stream.
+        # min, max and other reductions are resolved after the block ends
+        # Prints max(x) = 2 (x=12345 is outside the block and ignored)
+        # and min(y) = 2 (y=1 is before the call to min()).
 
-        .. code-block:: python
-
-            with given() as gv:
-                gv.subscribe(print)
-
-                results = []
-                gv["x"].subscribe(results.append)
-
-                give(x=1)  # prints {"x": 1}
-                give(x=2)  # prints {"x": 2}
-
-                assert results == [1, 2]
-
-        Arguments:
-            observer:
-                The object that is to receive notifications.
-            on_error:
-                Action to invoke upon exceptional termination of the
-                observable sequence.
-            on_completed:
-                 Action to invoke upon graceful termination of the
-                 observable sequence.
-            on_next:
-                Action to invoke for each element in the observable
-                sequence.
-
-        Returns:
-            An object representing the subscription with a ``dispose()``
-            method to remove it.
-        """
-        return self.obs.subscribe(*args, **kwargs)
-
-    def subscribe_(self, *args, **kwargs):
-        return self.obs.subscribe_(*args, **kwargs)
-
-
-class Stream:
-    def __init__(self):
-        self.observers = []
-
-        def make(observer, scheduler):
-            self.observers.append(observer)
-
-        src = rx.create(make)
-        self.source = ObservableProxy(src)
-
-    def push(self, data):
-        for obs in self.observers:
-            obs.on_next(data)
-
-    def complete(self):
-        for obs in self.observers:
-            obs.on_completed()
-
-
-class Given:
-    """Context manager that yields an ObservableProxy for a block.
-
-    Upon entering, an :class:`~giving.gvn.ObservableProxy` is yielded,
-    and calls to ``give`` will trigger that Observable. Upon exiting,
-    the Observable is marked as completed, triggering reductions such
-    as ``min`` or ``sum``.
+        with gv:
+            # ERROR because gv can only be activated once
+            ...
 
     Arguments:
-        key: The key to extract, or None.
         context:
             The ContextVar to use to sync with ``give``.
     """
 
-    def __init__(self, context=global_context):
-        self._token = self._stream = None
+    def __init__(self, context=global_context, _obs=None, _root=None):
+        self._token = None
         self._context = context
 
+        if _obs is None:
+            assert _root is None
+            _root = self
+
+            self._observers = []
+
+            def make(observer, scheduler):
+                self._observers.append(observer)
+
+            _obs = rx.create(make)
+
+        self._root = _root
+        super().__init__(_obs)
+
+    #################
+    # Extra methods #
+    #################
+
+    @contextmanager
+    def values(self):
+        """Context manager to accumulate the stream into a list.
+
+        .. code-block:: python
+
+            with given()["?x"].values() as results:
+                give(x=1)
+                give(x=2)
+
+            assert results == [1, 2]
+
+        Note that this will activate the root given() including all subscriptions
+        that it has (directly or indirectly).
+        """
+        with self._root:
+            results = self.accum()
+            yield results
+
+    #################
+    # Instantiation #
+    #################
+
+    def _copy(self, new_obs):
+        """Copy this observable with a new underlying observable."""
+        return type(self)(context=None, _obs=new_obs, _root=self._root)
+
+    def _push(self, data):
+        """Push data to the stream."""
+        for obs in self._observers:
+            obs.on_next(data)
+
     def __enter__(self):
-        assert self._token is None
-        self._stream = strm = Stream()
+        if self._root is not self:
+            raise Exception("Only the root given() can be used as a context manager")
+
+        if self._token is not None:
+            raise Exception("An instance of given() can only be entered once")
+
         h = self._context.get()
-        self._token = self._context.set((*h, strm.push))
-        return strm.source
+        self._token = self._context.set((*h, self._push))
+        return self
 
     def __exit__(self, exc_type=None, exc=None, tb=None):
-        self._stream.complete()
+        for obs in self._observers:
+            obs.on_completed()
         self._context.reset(self._token)
-        self._token = self._stream = None
+        self._observers.clear()
+        self._token = True

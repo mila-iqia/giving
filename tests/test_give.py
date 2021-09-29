@@ -1,5 +1,3 @@
-from contextlib import contextmanager
-
 import pytest
 from varname import ImproperUseError, VarnameRetrievingError
 
@@ -7,11 +5,8 @@ from giving import give, given, giver
 from giving.gvr import LinePosition, register_special, resolve
 
 
-@contextmanager
 def accumulate(key):
-    with given() as gv:
-        results = gv[f"?{key}"].accum()
-        yield results
+    return given().getitem(key, strict=False).values()
 
 
 def bisect(arr, key):
@@ -376,3 +371,26 @@ def test_variant_2():
         {"stuff": {"zazz": 3}, "transformed": True},
         {"stuff": {"zazz": 4, "z": 3}, "transformed": True},
     ]
+
+
+def test_given_reenter():
+    gv = given()
+    results = gv["a"].accum()
+
+    with gv:
+        give(a=1)
+        give(a=7)
+
+    assert results == [1, 7]
+
+    with pytest.raises(Exception):
+        with gv:
+            pass
+
+
+def test_given_notroot():
+    gv = given()
+
+    with pytest.raises(Exception):
+        with gv["?a"]:
+            pass

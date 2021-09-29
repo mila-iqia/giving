@@ -7,7 +7,7 @@ from .gvr import Giver, global_context
 
 
 def make_give(context=None):
-    """Create independent give/given/accumulate.
+    """Create independent give/given.
 
     The resulting functions share their own ``ContextVar``, which
     makes them independent from the main instances of ``give`` and
@@ -18,8 +18,8 @@ def make_give(context=None):
             or ``None`` if a new ``ContextVar`` is to be created.
 
     Returns:
-        A SimpleNamespace with attributes ``context``, ``give``,
-        ``given`` and ``accumulate``.
+        A SimpleNamespace with attributes ``context``, ``give`` and
+        ``given``.
     """
 
     context = context or ContextVar("context", default=())

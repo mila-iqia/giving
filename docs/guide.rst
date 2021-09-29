@@ -43,13 +43,13 @@ Important methods
 
 The important methods listed here are those you should know in order to be immediately productive with Giving.
 
-* :func:`~giving.obs.ObservableProxy.print` and :func:`~giving.obs.ObservableProxy.display`: Print the stuff to the terminal. ``display`` looks nicer, but ``print`` has more flexible formatting.
+* :func:`~giving.gvn.Given.print` and :func:`~giving.gvn.Given.display`: Print the stuff to the terminal. ``display`` looks nicer, but ``print`` has more flexible formatting.
 
   .. code-block:: python
 
       gv.print("x = {x}, y = {y:.2%}")
 
-* :func:`~giving.obs.ObservableProxy.accum`: This returns a list to which the stream's dicts will be appended. This allows you to do anything you want that can be done with a list, like reductions or plotting. Giving provides a battery of operators that might do the job better, but if you have trouble with the paradigm or can't be bothered, this is an easy escape hatch.
+* :func:`~giving.gvn.Given.accum`: This returns a list to which the stream's dicts will be appended. This allows you to do anything you want that can be done with a list, like reductions or plotting. Giving provides a battery of operators that might do the job better, but if you have trouble with the paradigm or can't be bothered, this is an easy escape hatch.
 
   .. code-block:: python
 
@@ -57,7 +57,7 @@ The important methods listed here are those you should know in order to be immed
       ...
       print(sum(data["x"] for data in results if "x" in data))
 
-* :func:`~giving.obs.ObservableProxy.subscribe` and :func:`~giving.obs.ObservableProxy.ksubscribe`: Do stuff with the data as it comes. The difference between ``subscribe`` and ``ksubscribe`` is that the former is called with one argument, which is the next entry in the stream, whereas the latter assumes that all the elements are dicts, and the function is called with ``**kwargs`` syntax.
+* :func:`~giving.gvn.Given.subscribe` and :func:`~giving.gvn.Given.ksubscribe`: Do stuff with the data as it comes. The difference between ``subscribe`` and ``ksubscribe`` is that the former is called with one argument, which is the next entry in the stream, whereas the latter assumes that all the elements are dicts, and the function is called with ``**kwargs`` syntax.
 
   .. note::
 
@@ -168,8 +168,8 @@ Wrapping
 * :meth:`give.wrap()<giving.core.Giver.wrap>`: give a special key at the beginning and end of a block
 * :meth:`give.wrap_inherit()<giving.core.Giver.wrap_inherit>`: give a special key at the beginning and end of a block
 * :meth:`give.inherit()<giving.core.Giver.inherit>`: add default key/values for every give() in the block
-* :func:`given.wrap()<giving.obs.ObservableProxy.wrap>`: plug a context manager at the location of a ``give.wrap``
-* :func:`given.kwrap()<giving.obs.ObservableProxy.kwrap>`: same as wrap, but pass kwargs
+* :func:`given.wrap()<giving.gvn.Given.wrap>`: plug a context manager at the location of a ``give.wrap``
+* :func:`given.kwrap()<giving.gvn.Given.kwrap>`: same as wrap, but pass kwargs
 
 Timing
 ^^^^^^
@@ -181,6 +181,6 @@ Timing
 Debugging
 ^^^^^^^^^
 
-* :func:`~giving.obs.ObservableProxy.breakpoint`: set a breakpoint whenever data comes in. Use this with filters.
+* :func:`~giving.gvn.Given.breakpoint`: set a breakpoint whenever data comes in. Use this with filters.
 * :func:`~giving.operators.tag`: assigns a special word to every entry. Use with ``breakword``.
-* :func:`~giving.obs.ObservableProxy.breakword`: set a breakpoint on a specific word set by ``tag``, using the ``BREAKWORD`` environment variable.
+* :func:`~giving.gvn.Given.breakword`: set a breakpoint on a specific word set by ``tag``, using the ``BREAKWORD`` environment variable.

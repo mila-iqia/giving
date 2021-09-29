@@ -1,10 +1,10 @@
 
-giving.obs
+giving.gvn
 ==========
 
-.. automodule:: giving.obs
+.. automodule:: giving.gvn
 
-    .. autoclass:: ObservableProxy
+    .. autoclass:: Given
 
         .. automethod:: accum
         .. automethod:: breakpoint
@@ -19,6 +19,7 @@ giving.obs
         .. *
         .. automethod:: print
         .. automethod:: subscribe(observer=None, on_next=None, on_error=None, on_completed=None)
+        .. automethod:: values
         .. automethod:: wrap
         .. automethod:: __or__
         .. automethod:: __rshift__
@@ -615,3 +616,6 @@ giving.obs
 
             See :func:`~giving.operators.zip_with_list`
 
+    .. class:: ObservableProxy
+
+        Base class for :class:`~giving.gvn.Given` which provides most of the methods.

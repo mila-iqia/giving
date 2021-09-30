@@ -18,6 +18,8 @@ giving.gvn
         .. automethod:: pipe(*ops)
         .. *
         .. automethod:: print
+        .. automethod:: run
+        .. automethod:: runget
         .. automethod:: subscribe(observer=None, on_next=None, on_error=None, on_completed=None)
         .. automethod:: values
         .. automethod:: wrap

@@ -484,6 +484,48 @@ class Given(ObservableProxy):
             results = self.accum()
             yield results
 
+    def run(self, fn, *args, **kwargs):
+        """Run a function in the context of this Given.
+
+        .. code-block:: python
+
+            def main():
+                give(x=1)
+                give(x=2)
+
+            gv = given()
+            gv["x"].print()
+            gv.run(main)  # prints 1, 2
+
+        Arguments:
+            fn: The function to run.
+            args: Positional arguments to pass to fn.
+            kwargs: Keyword arguments to pass to fn.
+        """
+        with self._root:
+            fn(*args, **kwargs)
+
+    def runget(self, fn, *args, **kwargs):
+        """Run a function in the context of this Given and get the values.
+
+        .. code-block:: python
+
+            def main():
+                give(x=1)
+                give(x=2)
+
+            values = given()["x"].runget(main)
+            assert values == [1, 2]
+
+        Arguments:
+            fn: The function to run.
+            args: Positional arguments to pass to fn.
+            kwargs: Keyword arguments to pass to fn.
+        """
+        with self.values() as results:
+            fn(*args, **kwargs)
+        return results
+
     #################
     # Instantiation #
     #################

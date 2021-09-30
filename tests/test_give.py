@@ -394,3 +394,25 @@ def test_given_notroot():
     with pytest.raises(Exception):
         with gv["?a"]:
             pass
+
+
+def test_run():
+    def _main(a):
+        give(x=a)
+        give(x=a + 1)
+
+    gv = given()
+    results = gv["x"].accum()
+    gv.run(_main, 41)
+
+    assert results == [41, 42]
+
+
+def test_runget():
+    def _main(a):
+        give(x=a)
+        give(x=a + 1)
+
+    results = given()["x"].runget(_main, 41)
+
+    assert results == [41, 42]

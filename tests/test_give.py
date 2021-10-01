@@ -405,9 +405,26 @@ def test_given_reenter():
 def test_given_notroot():
     gv = given()
 
-    with pytest.raises(Exception):
-        with gv["?a"]:
-            pass
+    with gv["?a"] as gva:
+        results = gva.accum()
+        give(a=1)
+        give(a=2)
+        give(a=3)
+
+    give(a=4)
+
+    assert results == [1, 2, 3]
+
+
+def test_disposable_context_manager():
+    results = []
+
+    with given()["a"].subscribe(results.append):
+        give(a=1)
+        give(a=2)
+        give(a=3)
+
+    assert results == [1, 2, 3]
 
 
 def test_exec():

@@ -14,6 +14,23 @@ class Failure(Exception):
     """Error type raised by fail() by default."""
 
 
+class DisposableWrapper:
+    """Wraps a Disposable to install a custom context manager."""
+
+    def __init__(self, obs, disposable):
+        self.obs = obs
+        self.disposable = disposable
+        self.dispose = self.disposable.dispose
+
+    def __enter__(self):
+        self.obs.__enter__()
+        self.disposable.__enter__()
+
+    def __exit__(self, exc_type=None, exc=None, tb=None):
+        self.disposable.__exit__(exc_type, exc, tb)
+        self.obs.__exit__(exc_type, exc, tb)
+
+
 class ObservableProxy:
     """Defines a rich interface for an Observable."""
 
@@ -77,10 +94,12 @@ class ObservableProxy:
             An object representing the subscription with a ``dispose()``
             method to remove it.
         """
-        return self.obs.subscribe(*args, **kwargs)
+        disposable = self.obs.subscribe(*args, **kwargs)
+        return DisposableWrapper(self, disposable)
 
     def subscribe_(self, *args, **kwargs):
-        return self.obs.subscribe_(*args, **kwargs)
+        disposable = self.obs.subscribe_(*args, **kwargs)
+        return DisposableWrapper(self, disposable)
 
     #########################
     # Special subscriptions #
@@ -233,7 +252,7 @@ class ObservableProxy:
             fn: The function to call.
         """
         fn = lax_function(fn)
-        self.subscribe(lambda data: fn(**data))
+        return self.subscribe(lambda data: fn(**data))
 
     def kwrap(self, name, fn=None, return_function=False):
         """Subscribe a context manager, corresponding to :meth:`~giving.gvr.Giver.wrap`.
@@ -541,7 +560,8 @@ class Given(ObservableProxy):
 
     def __enter__(self):
         if self._root is not self:
-            raise Exception("Only the root given() can be used as a context manager")
+            self._root.__enter__()
+            return self
 
         if self._token is not None:
             raise Exception("An instance of given() can only be entered once")
@@ -551,6 +571,10 @@ class Given(ObservableProxy):
         return self
 
     def __exit__(self, exc_type=None, exc=None, tb=None):
+        if self._root is not self:
+            self._root.__exit__(exc_type, exc, tb)
+            return
+
         for obs in self._observers:
             obs.on_completed()
         self._context.reset(self._token)

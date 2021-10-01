@@ -37,13 +37,14 @@ with given() as gv:
 </td>
 <td>
 
-```text
+```json
 a: 10; b: 20
 a * b: 200; c: 30
 ```
 
 </td>
 </tr>
+<tr></tr>
 
 <!-- ROW -->
 
@@ -71,6 +72,7 @@ print(results)
 
 </td>
 </tr>
+<tr></tr>
 
 <!-- ROW -->
 
@@ -102,6 +104,7 @@ steps: 63
 
 </td>
 </tr>
+<tr></tr>
 
 <!-- ROW -->
 
@@ -124,6 +127,7 @@ print(st)
 
 </td>
 </tr>
+<tr></tr>
 
 <!-- ROW -->
 
@@ -152,6 +156,7 @@ elk: 3; rabbit: 2; wolf: 4
 
 </td>
 </tr>
+<tr></tr>
 
 <!-- ROW -->
 
@@ -182,7 +187,7 @@ i: 40
 
 </td>
 </tr>
-
+<tr></tr>
 
 </table>
 
@@ -275,11 +280,11 @@ Most of these reductions can be called with the ``scan`` argument set to ``True`
 
 ### Wrapping
 
-* [wrap](https://giving.readthedocs.io/en/latest/ref-gvr.html#giving.gvr.Giver.wrap>`: give a special key at the beginning and end of a block
-* [wrap_inherit](https://giving.readthedocs.io/en/latest/ref-gvr.html#giving.gvr.Giver.wrap_inherit>`: give a special key at the beginning and end of a block
-* [inherit](https://giving.readthedocs.io/en/latest/ref-gvr.html#giving.gvr.Giver.inherit>`: add default key/values for every give() in the block
-* :func:`given.wrap()<giving.gvn.Given.wrap>`: plug a context manager at the location of a ``give.wrap``
-* :func:`given.kwrap()<giving.gvn.Given.kwrap>`: same as wrap, but pass kwargs
+* [wrap](https://giving.readthedocs.io/en/latest/ref-gvr.html#giving.gvr.Giver.wrap): give a special key at the beginning and end of a block
+* [wrap_inherit](https://giving.readthedocs.io/en/latest/ref-gvr.html#giving.gvr.Giver.wrap_inherit): give a special key at the beginning and end of a block
+* [inherit](https://giving.readthedocs.io/en/latest/ref-gvr.html#giving.gvr.Giver.inherit): add default key/values for every give() in the block
+* [wrap](https://giving.readthedocs.io/en/latest/ref-gvn.html#giving.gvn.Given.wrap): plug a context manager at the location of a ``give.wrap``
+* [kwrap](https://giving.readthedocs.io/en/latest/ref-gvn.html#giving.gvn.Given.kwrap): same as wrap, but pass kwargs
 
 ### Timing
 

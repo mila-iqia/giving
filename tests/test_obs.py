@@ -103,7 +103,15 @@ def test_fail():
             things(1, 2, 3)
 
     with given() as gv:
-        gv["a"].filter(lambda a: a == 2).fail(ValueError)
+        gv["a"].filter(lambda a: a == 2).fail("{} is bad")
+
+        with pytest.raises(Failure) as excinfo:
+            things(1, 2, 3)
+
+        assert excinfo.value.args[0] == "2 is bad"
+
+    with given() as gv:
+        gv["a"].filter(lambda a: a == 2).fail(exc_type=ValueError)
 
         with pytest.raises(ValueError):
             things(1, 2, 3)
@@ -120,6 +128,13 @@ def test_fail_if_empty():
         with given() as gv:
             gv["?b"].fail_if_empty()
             things(1, 2, 3)
+
+    with pytest.raises(Failure) as excinfo:
+        with given() as gv:
+            gv["?b"].fail_if_empty("Oh no")
+            things(1, 2, 3)
+
+    assert excinfo.value.args[0] == "Oh no"
 
     with given() as gv:
         gv["?a"].fail_if_empty()

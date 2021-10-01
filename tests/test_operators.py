@@ -94,6 +94,16 @@ def test_format4():
         assert results == ["3 4"]
 
 
+def test_format_raw():
+    with given() as gv:
+        results = gv["a", "b"].format("{}", raw=True).accum()
+
+        give(a=1, b=2)
+        give(a=3, b=4)
+
+        assert results == ["(1, 2)", "(3, 4)"]
+
+
 def test_kmap():
     with given() as gv:
         results = []

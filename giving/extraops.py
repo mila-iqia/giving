@@ -371,17 +371,21 @@ class count:
             return self.reduce(last, new)
 
 
-def format(string, skip_missing=False):
+def format(string, raw=False, skip_missing=False):
     """Format an object using a format string.
+
+    * If the data is a dict, it is passed as ``*kwargs`` to ``str.format``, unless raw=True
+    * If the data is a tuple, it is passed as ``*args`` to ``str.format``, unless raw=True
 
     Arguments:
         string: The format string.
+        raw: Whether to pass the data as ``*args`` or ``**kwargs`` if it is a tuple or dict.
         skip_missing: Whether to ignore KeyErrors due to missing entries in the format.
     """
     SKIP = object()
 
     def _fmt(x):
-        if isinstance(x, dict):
+        if not raw and isinstance(x, dict):
             if skip_missing:
                 try:
                     return string.format(**x)
@@ -389,7 +393,7 @@ def format(string, skip_missing=False):
                     return SKIP
             else:
                 return string.format(**x)
-        elif isinstance(x, (list, tuple)):
+        elif not raw and isinstance(x, tuple):
             return string.format(*x)
         else:
             return string.format(x)

@@ -182,22 +182,26 @@ class ObservableProxy:
             self.breakword(word=breakword, skip=skip)
         return sub
 
-    def fail(self, exc_type=Failure):
+    def fail(self, message=None, exc_type=Failure):
         """Raise an exception if the stream produces anything.
 
         Arguments:
+            message:
+                The exception message (format).
             exc_type:
                 The exception type to raise. Will be passed the next data
                 element, and the result is raised. Defaults to
                 :class:`~giving.gvn.Failure`.
         """
+        if message is not None:
+            self = self.format(message)
 
         def _fail(data):
             raise exc_type(data)
 
         return self.subscribe(_fail)
 
-    def fail_if_empty(self, exc_type=Failure):
+    def fail_if_empty(self, message=None, exc_type=Failure):
         """Raise an exception if the stream is empty.
 
         Arguments:
@@ -207,7 +211,7 @@ class ObservableProxy:
 
         def _fail(is_empty):
             if is_empty:
-                raise exc_type(is_empty)
+                raise exc_type("Stream is empty" if message is None else message)
 
         return self.is_empty().subscribe(_fail)
 

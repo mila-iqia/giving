@@ -7,7 +7,7 @@ import rx
 from . import operators
 from .executors import Breakpoint, Displayer
 from .gvr import Giver, global_context
-from .utils import lax_function
+from .utils import lax_function, reduced_traceback
 
 
 class Failure(Exception):
@@ -182,7 +182,7 @@ class ObservableProxy:
             self.breakword(word=breakword, skip=skip)
         return sub
 
-    def fail(self, message=None, exc_type=Failure):
+    def fail(self, message=None, exc_type=Failure, skip=["giving.*", "rx.*"]):
         """Raise an exception if the stream produces anything.
 
         Arguments:
@@ -192,16 +192,19 @@ class ObservableProxy:
                 The exception type to raise. Will be passed the next data
                 element, and the result is raised. Defaults to
                 :class:`~giving.gvn.Failure`.
+            skip:
+                Modules to skip in the traceback.
+                Defaults to "giving.*" and "rx.*".
         """
         if message is not None:
             self = self.format(message)
 
         def _fail(data):
-            raise exc_type(data)
+            raise exc_type(data).with_traceback(reduced_traceback(skip=skip))
 
         return self.subscribe(_fail)
 
-    def fail_if_empty(self, message=None, exc_type=Failure):
+    def fail_if_empty(self, message=None, exc_type=Failure, skip=["giving.*", "rx.*"]):
         """Raise an exception if the stream is empty.
 
         Arguments:
@@ -211,7 +214,8 @@ class ObservableProxy:
 
         def _fail(is_empty):
             if is_empty:
-                raise exc_type("Stream is empty" if message is None else message)
+                exc = exc_type("Stream is empty" if message is None else message)
+                raise exc.with_traceback(reduced_traceback(skip=skip))
 
         return self.is_empty().subscribe(_fail)
 

@@ -1,4 +1,6 @@
+import fnmatch
 import functools
+import sys
 import types
 
 from rx import operators as rxop
@@ -179,3 +181,30 @@ def reducer(func, default_seed=NotSet, postprocess=NotSet):
     _create.__name__ = name
     _create.__doc__ = func.__doc__
     return _create
+
+
+def reduced_traceback(skip=["giving.*", "rx.*"], depth=2):
+    """Create a traceback from the current frame, minus skipped modules.
+
+    Arguments:
+        skip: List of modules to skip.
+        depth: Depth at which to start.
+    """
+    # Adapted from one of the answers on here (plus skipping code):
+    # https://stackoverflow.com/questions/27138440/how-to-create-a-traceback-object
+
+    tb = None
+    while True:
+        try:
+            frame = sys._getframe(depth)
+            depth += 1
+        except ValueError:
+            break
+
+        name = frame.f_globals.get("__name__", "")
+        if any(fnmatch.fnmatch(name, sk) for sk in skip):
+            continue
+        print(name)
+        tb = types.TracebackType(tb, frame, frame.f_lasti, frame.f_lineno)
+
+    return tb

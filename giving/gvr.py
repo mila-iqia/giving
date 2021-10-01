@@ -81,6 +81,16 @@ def _special_line():
     return LinePosition(co.co_name, co.co_filename, fr.f_lineno)
 
 
+def _find_targets(target):
+    if isinstance(target, ast.Tuple):
+        results = []
+        for t in target.elts:
+            results += _find_targets(t)
+        return results
+    else:
+        return [target.id]
+
+
 def _find_above(frame):
     node = get_node(frame + 1)
     if node is None:
@@ -106,7 +116,7 @@ def _find_above(frame):
 
                     if isinstance(assignment, ast.Assign):
                         target = assignment.targets[-1]
-                        names = [target.id]
+                        names = _find_targets(target)
                     elif isinstance(assignment, (ast.AugAssign, ast.AnnAssign)):
                         names = [assignment.target.id]
                     else:

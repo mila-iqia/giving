@@ -31,9 +31,15 @@ def give_assign(x):
     return y
 
 
-def give_multi_assign(x):
-    z = y = give(x)
-    return y, z
+# def give_multi_assign(x):
+#     z = y = give(x)
+#     return y, z
+
+
+def give_multi_assign2(x):
+    (a, b), c = (x, x + 1), x + 2
+    give()
+    return a, b, c
 
 
 def give_above(x):
@@ -98,6 +104,14 @@ def test_give():
     with accumulate("y") as results:
         give_assign(4)
     assert results == [4]
+
+    # with accumulate("y") as results:
+    #     give_multi_assign(4)
+    # assert results == [4]
+
+    with given()["a", "b", "c"].values() as results:
+        give_multi_assign2(4)
+    assert results == [(4, 5, 6)]
 
     with accumulate("y") as results:
         give_above(4)

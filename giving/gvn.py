@@ -195,7 +195,7 @@ class ObservableProxy:
     def give(self, *keys, **extra):
         """Give each element.
 
-        This calls :func:`~giving.core.give` for each value in the stream.
+        This calls :func:`~giving.api.give` for each value in the stream.
 
         Be careful using this method because it could easily lead to an infinite loop.
 
@@ -236,7 +236,7 @@ class ObservableProxy:
         self.subscribe(lambda data: fn(**data))
 
     def kwrap(self, name, fn=None, return_function=False):
-        """Subscribe a context manager, corresponding to :meth:`~giving.core.Giver.wrap`.
+        """Subscribe a context manager, corresponding to :meth:`~giving.gvr.Giver.wrap`.
 
         ``obs.kwrap(fn)`` is shorthand for ``obs.wrap(fn, pass_keys=True)``.
 
@@ -280,7 +280,7 @@ class ObservableProxy:
         return obs.subscribe(print)
 
     def wrap(self, name, fn=None, pass_keys=False, return_function=False):
-        """Subscribe a context manager, corresponding to :meth:`~giving.core.Giver.wrap`.
+        """Subscribe a context manager, corresponding to :meth:`~giving.gvr.Giver.wrap`.
 
         .. code-block:: python
 
@@ -484,7 +484,7 @@ class Given(ObservableProxy):
             results = self.accum()
             yield results
 
-    def run(self, fn, *args, **kwargs):
+    def exec(self, fn, *args, **kwargs):
         """Run a function in the context of this Given.
 
         .. code-block:: python
@@ -495,7 +495,7 @@ class Given(ObservableProxy):
 
             gv = given()
             gv["x"].print()
-            gv.run(main)  # prints 1, 2
+            gv.exec(main)  # prints 1, 2
 
         Arguments:
             fn: The function to run.
@@ -505,7 +505,7 @@ class Given(ObservableProxy):
         with self._root:
             fn(*args, **kwargs)
 
-    def runget(self, fn, *args, **kwargs):
+    def eval(self, fn, *args, **kwargs):
         """Run a function in the context of this Given and get the values.
 
         .. code-block:: python
@@ -514,7 +514,7 @@ class Given(ObservableProxy):
                 give(x=1)
                 give(x=2)
 
-            values = given()["x"].runget(main)
+            values = given()["x"].eval(main)
             assert values == [1, 2]
 
         Arguments:

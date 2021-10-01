@@ -10,6 +10,8 @@ giving.gvn
         .. automethod:: breakpoint
         .. automethod:: breakword
         .. automethod:: display
+        .. automethod:: eval
+        .. automethod:: exec
         .. automethod:: fail
         .. automethod:: fail_if_empty
         .. automethod:: give
@@ -18,8 +20,6 @@ giving.gvn
         .. automethod:: pipe(*ops)
         .. *
         .. automethod:: print
-        .. automethod:: run
-        .. automethod:: runget
         .. automethod:: subscribe(observer=None, on_next=None, on_error=None, on_completed=None)
         .. automethod:: values
         .. automethod:: wrap

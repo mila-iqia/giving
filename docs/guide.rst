@@ -5,7 +5,7 @@ Guide
 Give's syntax
 -------------
 
-There are multiple ways you can use :func:`~giving.core.give`. ``give`` returns None *unless* it is given a single positional argument, in which case it returns the value of that argument.
+There are multiple ways you can use :func:`~giving.api.give`. ``give`` returns None *unless* it is given a single positional argument, in which case it returns the value of that argument.
 
 * **give(key=value)**
 
@@ -98,14 +98,14 @@ The important methods listed here are those you should know in order to be immed
 Time and code location
 ----------------------
 
-* :meth:`give.line(...)<giving.core.Giver.line>` emits, in addition to the rest, ``{"$line": location_info}`` where ``location_info`` is a :class:`~giving.core.LinePosition` object that corresponds to where ``give.line`` was called.
-* :meth:`give.time(...)<giving.core.Giver.time>` emits, in addition to the rest, ``{"$time": time.time()}``
+* :meth:`give.line(...)<giving.gvr.Giver.line>` emits, in addition to the rest, ``{"$line": location_info}`` where ``location_info`` is a :class:`~giving.gvr.LinePosition` object that corresponds to where ``give.line`` was called.
+* :meth:`give.time(...)<giving.gvr.Giver.time>` emits, in addition to the rest, ``{"$time": time.time()}``
 
 
 Customization
 -------------
 
-Custom versions of ``give`` can be created with :func:`~giving.core.giver`. For example, ``givex = giver("x", y=7); givex(2)`` would emit ``{"x": 2, "y": 7}``. You can also create give/given pairs with :func:`~giving.core.make_give`.
+Custom versions of ``give`` can be created with :func:`~giving.gvr.giver`. For example, ``givex = giver("x", y=7); givex(2)`` would emit ``{"x": 2, "y": 7}``. You can also create give/given pairs with :func:`~giving.api.make_give`.
 
 
 Selected operators
@@ -165,9 +165,9 @@ Most of these reductions can be called with the ``scan`` argument set to ``True`
 Wrapping
 ^^^^^^^^
 
-* :meth:`give.wrap()<giving.core.Giver.wrap>`: give a special key at the beginning and end of a block
-* :meth:`give.wrap_inherit()<giving.core.Giver.wrap_inherit>`: give a special key at the beginning and end of a block
-* :meth:`give.inherit()<giving.core.Giver.inherit>`: add default key/values for every give() in the block
+* :meth:`give.wrap()<giving.gvr.Giver.wrap>`: give a special key at the beginning and end of a block
+* :meth:`give.wrap_inherit()<giving.gvr.Giver.wrap_inherit>`: give a special key at the beginning and end of a block
+* :meth:`give.inherit()<giving.gvr.Giver.inherit>`: add default key/values for every give() in the block
 * :func:`given.wrap()<giving.gvn.Given.wrap>`: plug a context manager at the location of a ``give.wrap``
 * :func:`given.kwrap()<giving.gvn.Given.kwrap>`: same as wrap, but pass kwargs
 

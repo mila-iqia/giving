@@ -25,7 +25,7 @@ You can trivially install ``giving`` via ``pip``:
 Usage
 -----
 
-Giving provides two main functions, :func:`~giving.core.give` and :func:`~giving.core.given`.
+Giving provides two main functions, :func:`~giving.api.give` and :func:`~giving.api.given`.
 
 * **give** is used to log data into a stream. For example, ``give(a=1, b=2)`` will push ``{"a": 1, "b": 2}`` onto the stream.
 * **given** is a context manager that gives access to that stream. Using methods such as :func:`~giving.operators.where`, :func:`~giving.operators.map` or :func:`~giving.operators.filter`, the stream can be transformed.

@@ -26,9 +26,7 @@
 Simple logging
 
 ```python
-with given() as gv:
-    gv.display()
-
+with given().display():
     a, b = 10, 20
     give()
     give(a * b, c=30)
@@ -229,6 +227,16 @@ There are multiple ways you can use `give`. `give` returns None *unless* it is g
   *Returns:* None
 
 
+## Important functions and methods
+
+* [print](https://giving.readthedocs.io/en/latest/ref-gvn.html#giving.gvn.Given.print) and [display](https://giving.readthedocs.io/en/latest/ref-gvn.html#giving.gvn.Given.display): for printing out the stream
+* [values](https://giving.readthedocs.io/en/latest/ref-gvn.html#giving.gvn.Given.values) and [accum](https://giving.readthedocs.io/en/latest/ref-gvn.html#giving.gvn.Given.accum): for accumulating into a list
+* [subscribe](https://giving.readthedocs.io/en/latest/ref-gvn.html#giving.gvn.Given.subscribe) and [ksubscribe](https://giving.readthedocs.io/en/latest/ref-gvn.html#giving.gvn.Given.ksubscribe): perform a task on every element
+* [where](https://giving.readthedocs.io/en/latest/ref-operators.html#giving.operators.where), [where_any](https://giving.readthedocs.io/en/latest/ref-operators.html#giving.operators.where_any), [keep](https://giving.readthedocs.io/en/latest/ref-operators.html#giving.operators.keep), `gv["key"]`, `gv["?key"]`: filter based on keys
+
+[See here for more details.](https://giving.readthedocs.io/en/latest/guide.html#important-methods)
+
+
 ## Operator summary
 
 Not all operators are listed here. [See here](https://giving.readthedocs.io/en/latest/ref-operators.html) for the complete list.
@@ -297,6 +305,15 @@ Most of these reductions can be called with the ``scan`` argument set to ``True`
 * [breakpoint](https://giving.readthedocs.io/en/latest/ref-gvn.html#giving.gvn.Given.breakpoint): set a breakpoint whenever data comes in. Use this with filters.
 * [tag](https://giving.readthedocs.io/en/latest/ref-operators.html#giving.operators.tag): assigns a special word to every entry. Use with ``breakword``.
 * [breakword](https://giving.readthedocs.io/en/latest/ref-gvn.html#giving.gvn.Given.breakword): set a breakpoint on a specific word set by ``tag``, using the ``BREAKWORD`` environment variable.
+
+### Other
+
+* [accum](https://giving.readthedocs.io/en/latest/ref-gvn.html#giving.gvn.Given.accum): accumulate into a list
+* [display](https://giving.readthedocs.io/en/latest/ref-gvn.html#giving.gvn.Given.display): print out the stream (pretty).
+* [print](https://giving.readthedocs.io/en/latest/ref-gvn.html#giving.gvn.Given.print): print out the stream.
+* [values](https://giving.readthedocs.io/en/latest/ref-gvn.html#giving.gvn.Given.values): accumulate into a list (context manager)
+* [subscribe](https://giving.readthedocs.io/en/latest/ref-gvn.html#giving.gvn.Given.subscribe): run a task on every element
+* [ksubscribe](https://giving.readthedocs.io/en/latest/ref-gvn.html#giving.gvn.Given.ksubscribe): run a task on every element (keyword arguments)
 
 
 ## ML ideas

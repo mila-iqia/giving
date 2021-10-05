@@ -38,10 +38,50 @@ There are multiple ways you can use :func:`~giving.api.give`. ``give`` returns N
   *Returns:* None
 
 
+Time and code location
+^^^^^^^^^^^^^^^^^^^^^^
+
+* :meth:`give.line(...)<giving.gvr.Giver.line>` emits, in addition to the rest, ``{"$line": location_info}`` where ``location_info`` is a :class:`~giving.gvr.LinePosition` object that corresponds to where ``give.line`` was called.
+* :meth:`give.time(...)<giving.gvr.Giver.time>` emits, in addition to the rest, ``{"$time": time.time()}``
+
+
+Wrapping
+^^^^^^^^
+
+Use the :meth:`~giving.gvr.Giver.wrap` method to create blocks in which other context managers can be plugged:
+
+
+.. code-block:: python
+
+    @contextmanager
+    def hello():
+        print("hello!")
+        yield
+        print("bye!")
+
+    with given() as gv:
+
+        gv.wrap("main", hello)
+
+        with give.wrap("main"):
+            print(":)")
+
+    # prints:
+    # hello!
+    # :)
+    # bye!
+
+
+Customization
+^^^^^^^^^^^^^
+
+Custom versions of ``give`` can be created with :func:`~giving.gvr.giver`. For example, ``givex = giver("x", y=7); givex(2)`` would emit ``{"x": 2, "y": 7}``. You can also create give/given pairs with :func:`~giving.api.make_give`.
+
+
 Important methods
 -----------------
 
-The important methods listed here are those you should know in order to be immediately productive with Giving.
+The important methods listed here are those you should know in order to be immediately productive with Giving. They are available on the ``given()`` object. Unless otherwise specified, assume we are inside a block defined by ``with given() as gv: ...``.
 
 * :func:`~giving.gvn.Given.print` and :func:`~giving.gvn.Given.display`: Print the stuff to the terminal. ``display`` looks nicer, but ``print`` has more flexible formatting.
 
@@ -56,6 +96,15 @@ The important methods listed here are those you should know in order to be immed
       results = gv.accum()
       ...
       print(sum(data["x"] for data in results if "x" in data))
+
+* :meth:`~giving.gvn.Given.values`: Context manager which accumulates all values into a list (``with given().values() as vals: ...`` is essentially the same as ``with given() as gv: vals = gv.accum() ...``).
+
+  .. code-block:: python
+
+      with given()["?x"].values() as results:
+          ...
+
+      print(sum(results))
 
 * :func:`~giving.gvn.Given.subscribe` and :func:`~giving.gvn.Given.ksubscribe`: Do stuff with the data as it comes. The difference between ``subscribe`` and ``ksubscribe`` is that the former is called with one argument, which is the next entry in the stream, whereas the latter assumes that all the elements are dicts, and the function is called with ``**kwargs`` syntax.
 
@@ -93,19 +142,6 @@ The important methods listed here are those you should know in order to be immed
   .. code-block:: python
 
     gv.where("x", "y", z=True).print()
-
-
-Time and code location
-----------------------
-
-* :meth:`give.line(...)<giving.gvr.Giver.line>` emits, in addition to the rest, ``{"$line": location_info}`` where ``location_info`` is a :class:`~giving.gvr.LinePosition` object that corresponds to where ``give.line`` was called.
-* :meth:`give.time(...)<giving.gvr.Giver.time>` emits, in addition to the rest, ``{"$time": time.time()}``
-
-
-Customization
--------------
-
-Custom versions of ``give`` can be created with :func:`~giving.gvr.giver`. For example, ``givex = giver("x", y=7); givex(2)`` would emit ``{"x": 2, "y": 7}``. You can also create give/given pairs with :func:`~giving.api.make_give`.
 
 
 Selected operators
@@ -184,3 +220,9 @@ Debugging
 * :func:`~giving.gvn.Given.breakpoint`: set a breakpoint whenever data comes in. Use this with filters.
 * :func:`~giving.operators.tag`: assigns a special word to every entry. Use with ``breakword``.
 * :func:`~giving.gvn.Given.breakword`: set a breakpoint on a specific word set by ``tag``, using the ``BREAKWORD`` environment variable.
+* :func:`~giving.gvn.Given.print`: print out the stream.
+* :func:`~giving.gvn.Given.display`: print out the stream (pretty).
+* :func:`~giving.gvn.Given.accum`: accumulate into a list.
+* :func:`~giving.gvn.Given.values`: accumulate into a list (context manager).
+* :func:`~giving.gvn.Given.subscribe`: run a task on every element.
+* :func:`~giving.gvn.Given.ksubscribe`: run a task on every element (keyword arguments).

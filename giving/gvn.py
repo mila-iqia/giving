@@ -454,14 +454,83 @@ class SourceProxy(ObservableProxy):
         self._root = _root
         super().__init__(_obs)
 
-    def _copy(self, new_obs):
-        """Copy this observable with a new underlying observable."""
-        return type(self)(_obs=new_obs, _root=self._root)
-
     def _push(self, data):
         """Push data to the stream."""
         for obs in self._observers:
             obs.on_next(data)
+
+    #################
+    # Extra methods #
+    #################
+
+    @contextmanager
+    def values(self):
+        """Context manager to accumulate the stream into a list.
+
+        .. code-block:: python
+
+            with given()["?x"].values() as results:
+                give(x=1)
+                give(x=2)
+
+            assert results == [1, 2]
+
+        Note that this will activate the root given() including all subscriptions
+        that it has (directly or indirectly).
+        """
+        with self._root:
+            results = self.accum()
+            yield results
+
+    def exec(self, fn, *args, **kwargs):
+        """Run a function in the context of this Given.
+
+        .. code-block:: python
+
+            def main():
+                give(x=1)
+                give(x=2)
+
+            gv = given()
+            gv["x"].print()
+            gv.exec(main)  # prints 1, 2
+
+        Arguments:
+            fn: The function to run.
+            args: Positional arguments to pass to fn.
+            kwargs: Keyword arguments to pass to fn.
+        """
+        with self._root:
+            fn(*args, **kwargs)
+
+    def eval(self, fn, *args, **kwargs):
+        """Run a function in the context of this Given and get the values.
+
+        .. code-block:: python
+
+            def main():
+                give(x=1)
+                give(x=2)
+
+            values = given()["x"].eval(main)
+            assert values == [1, 2]
+
+        Arguments:
+            fn: The function to run.
+            args: Positional arguments to pass to fn.
+            kwargs: Keyword arguments to pass to fn.
+        """
+        with self.values() as results:
+            fn(*args, **kwargs)
+        return results
+
+    #################
+    # Instantiation #
+    #################
+
+    def _copy(self, new_obs):
+        """Copy this observable with a new underlying observable."""
+        return type(self)(_obs=new_obs, _root=self._root)
 
     def _enter(self):  # pragma: no cover
         """Called to enter the root source."""
@@ -534,75 +603,6 @@ class Given(SourceProxy):
         self._token = None
         self._context = context if _root is None else None
         super().__init__(_obs=_obs, _root=_root)
-
-    #################
-    # Extra methods #
-    #################
-
-    @contextmanager
-    def values(self):
-        """Context manager to accumulate the stream into a list.
-
-        .. code-block:: python
-
-            with given()["?x"].values() as results:
-                give(x=1)
-                give(x=2)
-
-            assert results == [1, 2]
-
-        Note that this will activate the root given() including all subscriptions
-        that it has (directly or indirectly).
-        """
-        with self._root:
-            results = self.accum()
-            yield results
-
-    def exec(self, fn, *args, **kwargs):
-        """Run a function in the context of this Given.
-
-        .. code-block:: python
-
-            def main():
-                give(x=1)
-                give(x=2)
-
-            gv = given()
-            gv["x"].print()
-            gv.exec(main)  # prints 1, 2
-
-        Arguments:
-            fn: The function to run.
-            args: Positional arguments to pass to fn.
-            kwargs: Keyword arguments to pass to fn.
-        """
-        with self._root:
-            fn(*args, **kwargs)
-
-    def eval(self, fn, *args, **kwargs):
-        """Run a function in the context of this Given and get the values.
-
-        .. code-block:: python
-
-            def main():
-                give(x=1)
-                give(x=2)
-
-            values = given()["x"].eval(main)
-            assert values == [1, 2]
-
-        Arguments:
-            fn: The function to run.
-            args: Positional arguments to pass to fn.
-            kwargs: Keyword arguments to pass to fn.
-        """
-        with self.values() as results:
-            fn(*args, **kwargs)
-        return results
-
-    #################
-    # Instantiation #
-    #################
 
     def _enter(self):
         if self._token is not None:

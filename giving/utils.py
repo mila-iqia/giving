@@ -204,7 +204,6 @@ def reduced_traceback(skip=["giving.*", "rx.*"], depth=2):
         name = frame.f_globals.get("__name__", "")
         if any(fnmatch.fnmatch(name, sk) for sk in skip):
             continue
-        print(name)
         tb = types.TracebackType(tb, frame, frame.f_lasti, frame.f_lineno)
 
     return tb

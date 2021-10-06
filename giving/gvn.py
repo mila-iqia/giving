@@ -42,13 +42,13 @@ class ObservableProxy:
     provided as methods on these objects.
     """
 
-    def __init__(self, obs):
-        assert not isinstance(obs, ObservableProxy)
-        self.obs = obs
+    def __init__(self, _obs):
+        assert not isinstance(_obs, ObservableProxy)
+        self._obs = _obs
 
     def _copy(self, new_obs):
         """Copy this observable with a new underlying observable."""
-        return type(self)(new_obs)
+        return type(self)(_obs=new_obs)
 
     ###################
     # Wrapped methods #
@@ -59,7 +59,7 @@ class ObservableProxy:
 
         Returns: An ObservableProxy.
         """
-        return self._copy(self.obs.pipe(*args, **kwargs))
+        return self._copy(self._obs.pipe(*args, **kwargs))
 
     def subscribe(self, *args, **kwargs):
         """Subscribe a function to this Observable stream.
@@ -94,11 +94,11 @@ class ObservableProxy:
             An object representing the subscription with a ``dispose()``
             method to remove it.
         """
-        disposable = self.obs.subscribe(*args, **kwargs)
+        disposable = self._obs.subscribe(*args, **kwargs)
         return DisposableWrapper(self, disposable)
 
     def subscribe_(self, *args, **kwargs):
-        disposable = self.obs.subscribe_(*args, **kwargs)
+        disposable = self._obs.subscribe_(*args, **kwargs)
         return DisposableWrapper(self, disposable)
 
     #########################
@@ -430,7 +430,67 @@ _operations = [op for op in operators.__all__ if op not in {"pipe"}]
 _put_opmethods(ObservableProxy, _operations)
 
 
-class Given(ObservableProxy):
+class SourceProxy(ObservableProxy):
+    """Base functionality for Given, but can be used for other things.
+
+    Subclasses should override ``__init__``, ``_enter``, ``_exit``, and
+    possibly ``_copy``.
+
+    The ``_push`` method should be used to push data to the stream.
+    """
+
+    def __init__(self, _obs=None, _root=None):
+        if _obs is None:
+            assert _root is None
+            _root = self
+
+            self._observers = []
+
+            def make(observer, scheduler):
+                self._observers.append(observer)
+
+            _obs = rx.create(make)
+
+        self._root = _root
+        super().__init__(_obs)
+
+    def _copy(self, new_obs):
+        """Copy this observable with a new underlying observable."""
+        return type(self)(_obs=new_obs, _root=self._root)
+
+    def _push(self, data):
+        """Push data to the stream."""
+        for obs in self._observers:
+            obs.on_next(data)
+
+    def _enter(self):  # pragma: no cover
+        """Called to enter the root source."""
+        pass
+
+    def _exit(self):  # pragma: no cover
+        """Called to exit the root source."""
+        pass
+
+    def __enter__(self):
+        if self._root is not self:
+            self._root.__enter__()
+            return self
+
+        self._enter()
+        return self
+
+    def __exit__(self, exc_type=None, exc=None, tb=None):
+        if self._root is not self:
+            self._root.__exit__(exc_type, exc, tb)
+            return
+
+        for obs in self._observers:
+            obs.on_completed()
+        self._observers.clear()
+        self._exit()
+
+
+class Given(SourceProxy):
     """Observable that streams the values given using ``give()``.
 
     Instances of Given must be activated as a context manager in order to
@@ -472,21 +532,8 @@ class Given(ObservableProxy):
 
     def __init__(self, context=global_context, _obs=None, _root=None):
         self._token = None
-        self._context = context
-
-        if _obs is None:
-            assert _root is None
-            _root = self
-
-            self._observers = []
-
-            def make(observer, scheduler):
-                self._observers.append(observer)
-
-            _obs = rx.create(make)
-
-        self._root = _root
-        super().__init__(_obs)
+        self._context = context if _root is None else None
+        super().__init__(_obs=_obs, _root=_root)
 
     #################
     # Extra methods #
@@ -557,34 +604,13 @@ class Given(ObservableProxy):
     # Instantiation #
     #################
 
-    def _copy(self, new_obs):
-        """Copy this observable with a new underlying observable."""
-        return type(self)(context=None, _obs=new_obs, _root=self._root)
-
-    def _push(self, data):
-        """Push data to the stream."""
-        for obs in self._observers:
-            obs.on_next(data)
-
-    def __enter__(self):
-        if self._root is not self:
-            self._root.__enter__()
-            return self
-
+    def _enter(self):
         if self._token is not None:
             raise Exception("An instance of given() can only be entered once")
 
         h = self._context.get()
         self._token = self._context.set((*h, self._push))
-        return self
 
-    def __exit__(self, exc_type=None, exc=None, tb=None):
-        if self._root is not self:
-            self._root.__exit__(exc_type, exc, tb)
-            return
-
-        for obs in self._observers:
-            obs.on_completed()
+    def _exit(self):
         self._context.reset(self._token)
-        self._observers.clear()
         self._token = True

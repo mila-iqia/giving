@@ -296,10 +296,14 @@ def bottom(n=10, key=None, reverse=False):
         [    bottom(n=2)   ]
         ---------------0-1-|
 
+    ``bottom`` may emit less than ``n`` elements, if there are
+    less than ``n`` elements in the orginal sequence.
+
     Arguments:
         n: The number of bottom entries to return.
         key: The comparison key function to use.
     """
+    assert n > 0
 
     def update(entries, new):
         if entries is None:
@@ -322,7 +326,7 @@ def bottom(n=10, key=None, reverse=False):
 
     return rxop.pipe(
         rxop.reduce(update, seed=None),
-        rxop.pluck(1),
+        rxop.map(lambda x: () if x is None else x[1]),
         rxop.flat_map(lambda x: x),
     )
 
@@ -825,6 +829,9 @@ def top(n=10, key=None):
         ---1-2-7-3-9-0-|
         [     top(n=2)     ]
         ---------------9-7-|
+
+    ``top`` may emit less than ``n`` elements, if there are
+    less than ``n`` elements in the orginal sequence.
 
     Arguments:
         n: The number of top entries to return.

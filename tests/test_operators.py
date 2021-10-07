@@ -679,3 +679,10 @@ def test_top():
 
     assert results1 == [99, 21, 5]
     assert results2 == [99, 21, 7]
+
+
+def test_bottom_empty():
+    with given() as gv:
+        results1 = gv["a"].top(n=3).accum()
+
+    assert results1 == []

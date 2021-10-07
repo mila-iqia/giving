@@ -657,3 +657,25 @@ def test_sole_errors():
 
         with pytest.raises(Exception):
             give(z=3)
+
+
+def test_bottom():
+    with given() as gv:
+        results1 = gv["a"].bottom(n=3).accum()
+        results2 = gv["a"].bottom(n=3, key=abs).accum()
+
+        things(1, 5, 2, 99, 3, -7, 21)
+
+    assert results1 == [-7, 1, 2]
+    assert results2 == [1, 2, 3]
+
+
+def test_top():
+    with given() as gv:
+        results1 = gv["a"].top(n=3).accum()
+        results2 = gv["a"].top(n=3, key=abs).accum()
+
+        things(1, 5, 2, 99, 3, -7, 21)
+
+    assert results1 == [99, 21, 5]
+    assert results2 == [99, 21, 7]

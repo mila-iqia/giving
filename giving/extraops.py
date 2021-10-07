@@ -2,6 +2,7 @@
 
 import builtins
 import operator
+from bisect import bisect_left
 from collections import deque
 from types import FunctionType
 
@@ -283,6 +284,47 @@ class average_and_variance:
             return (new_sum, new_v2, prev_size)
         else:
             return self.reduce(last, add)
+
+
+def bottom(n=10, key=None, reverse=False):
+    """Return the bottom n values, sorted in ascending order.
+
+    .. marble::
+        :alt: bottom
+
+        ---1-2-7-3-9-0-|
+        [    bottom(n=2)   ]
+        ---------------0-1-|
+
+    Arguments:
+        n: The number of bottom entries to return.
+        key: The comparison key function to use.
+    """
+
+    def update(entries, new):
+        if entries is None:
+            entries = ([], [])
+
+        keyed, elems = entries
+        newkey = key(new) if key else new
+
+        if len(keyed) < n or (newkey > keyed[0] if reverse else newkey < keyed[-1]):
+            ins = bisect_left(keyed, newkey)
+            keyed.insert(ins, newkey)
+            if reverse:
+                ins = len(elems) - ins
+            elems.insert(ins, newkey)
+            if len(keyed) > n:
+                del keyed[0]
+                elems.pop()
+
+        return keyed, elems
+
+    return rxop.pipe(
+        rxop.reduce(update, seed=None),
+        rxop.pluck(1),
+        rxop.flat_map(lambda x: x),
+    )
 
 
 def collect_between(start, end, common=None):
@@ -774,6 +816,23 @@ def tag(group="", field="$word", group_field="$group"):
     return rxop.pipe(rxop.map(tag_data), rxop.share())
 
 
+def top(n=10, key=None):
+    """Return the top n values, sorted in descending order.
+
+    .. marble::
+        :alt: top
+
+        ---1-2-7-3-9-0-|
+        [     top(n=2)     ]
+        ---------------9-7-|
+
+    Arguments:
+        n: The number of top entries to return.
+        key: The comparison key function to use.
+    """
+    return bottom(n=n, key=key, reverse=True)
+
+
 def variance(*args, **kwargs):
     return rxop.pipe(
         average_and_variance(*args, **kwargs), rxop.starmap(lambda avg, var: var)
@@ -853,6 +912,7 @@ __all__ = [
     "augment",
     "average",
     "average_and_variance",
+    "bottom",
     "collect_between",
     "count",
     "format",
@@ -869,6 +929,7 @@ __all__ = [
     "sole",
     "sum",
     "tag",
+    "top",
     "variance",
     "where",
     "where_any",

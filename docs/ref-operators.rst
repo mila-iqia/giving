@@ -13,6 +13,7 @@ The following operators are added in ``giving`` in order to better handle the ki
 :func:`~giving.operators.augment`,
 :func:`~giving.operators.as_`, 
 :func:`~giving.operators.average_and_variance`, 
+:func:`~giving.operators.bottom`,
 :func:`~giving.operators.collect_between`, 
 :func:`~giving.operators.format`, 
 :func:`~giving.operators.getitem`, 
@@ -25,6 +26,7 @@ The following operators are added in ``giving`` in order to better handle the ki
 :func:`~giving.operators.roll`, 
 :func:`~giving.operators.sole`,
 :func:`~giving.operators.tag`, 
+:func:`~giving.operators.top`,
 :func:`~giving.operators.variance`, 
 :func:`~giving.operators.where`, 
 :func:`~giving.operators.where_any`.
@@ -49,6 +51,7 @@ The main difference is the ``scan`` argument, which reinterprets the reduction a
     .. autofunction:: augment
     .. autofunction:: average(*, scan=False)
     .. autofunction:: average_and_variance(*, scan=False)
+    .. autofunction:: bottom
     .. autofunction:: buffer
     .. autofunction:: buffer_toggle
     .. autofunction:: buffer_when
@@ -177,6 +180,7 @@ The main difference is the ``scan`` argument, which reinterprets the reduction a
     .. autofunction:: to_list
     .. autofunction:: to_marbles
     .. autofunction:: to_set
+    .. autofunction:: top
     .. autofunction:: variance(*, scan=False)
     .. autofunction:: where
     .. autofunction:: where_any

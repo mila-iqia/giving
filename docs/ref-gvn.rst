@@ -62,6 +62,10 @@ giving.gvn
 
             See :func:`~giving.operators.average_and_variance`
 
+        .. function:: bottom(...)
+
+            See :func:`~giving.operators.bottom`
+
         .. function:: buffer(...)
 
             See :func:`~giving.operators.buffer`
@@ -561,6 +565,10 @@ giving.gvn
         .. function:: to_set(...)
 
             See :func:`~giving.operators.to_set`
+
+        .. function:: top(...)
+
+            See :func:`~giving.operators.top`
 
         .. function:: variance(...)
 

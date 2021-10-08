@@ -387,6 +387,17 @@ def test_max_key():
     assert results == [-30]
 
 
+def test_min_key2():
+    values = [1, 3, -4, 21, -8, -30]
+
+    with given() as gv:
+        results = gv.min(key="a").accum()
+
+        things(*values)
+
+    assert results == [{"a": -30}]
+
+
 def test_sum():
     values = [1, 3, -4, 21, -8, -17]
 
@@ -663,11 +674,13 @@ def test_bottom():
     with given() as gv:
         results1 = gv["a"].bottom(n=3).accum()
         results2 = gv["a"].bottom(n=3, key=abs).accum()
+        results3 = gv.bottom(n=2, key="a").accum()
 
         things(1, 5, 2, 99, 3, -7, 21)
 
     assert results1 == [-7, 1, 2]
     assert results2 == [1, 2, 3]
+    assert results3 == [{"a": -7}, {"a": 1}]
 
 
 def test_top():
@@ -678,7 +691,7 @@ def test_top():
         things(1, 5, 2, 99, 3, -7, 21)
 
     assert results1 == [99, 21, 5]
-    assert results2 == [99, 21, 7]
+    assert results2 == [99, 21, -7]
 
 
 def test_bottom_empty():

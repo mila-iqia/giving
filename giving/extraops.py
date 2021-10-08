@@ -13,6 +13,15 @@ from rx.operators import NotSet
 from .utils import lax_function, reducer
 
 
+def _keyfn(key):
+    if isinstance(key, (int, str)):
+        return operator.itemgetter(key)
+    elif key is None:
+        return lambda x: x
+    else:
+        return key
+
+
 def roll(n, reduce=None, seed=NotSet):  # noqa: F811
     """Group the last n elements, giving a sequence of overlapping sequences.
 
@@ -301,8 +310,9 @@ def bottom(n=10, key=None, reverse=False):
 
     Arguments:
         n: The number of bottom entries to return.
-        key: The comparison key function to use.
+        key: The comparison key function to use or a string.
     """
+    key = _keyfn(key)
     assert n > 0
 
     def update(entries, new):
@@ -317,7 +327,7 @@ def bottom(n=10, key=None, reverse=False):
             keyed.insert(ins, newkey)
             if reverse:
                 ins = len(elems) - ins
-            elems.insert(ins, newkey)
+            elems.insert(ins, new)
             if len(keyed) > n:
                 del keyed[0]
                 elems.pop()
@@ -683,7 +693,7 @@ class min:
         -------------2-|
 
     Arguments:
-        key: A key mapping function.
+        key: A key mapping function or a string.
         comparer: A function of two elements that returns -1 if the first is smaller
             than the second, 0 if they are equal, 1 if the second is larger.
         scan: If True, generate the current minimum on every element.
@@ -692,7 +702,7 @@ class min:
 
     def __init__(self, key=None, comparer=None):
         self.comparer = comparer or operator.gt
-        self.key = key or (lambda x: x)
+        self.key = _keyfn(key)
 
     def reduce(self, last, new):
         lastc = self.key(last)
@@ -715,7 +725,7 @@ class max:
         -------------7-|
 
     Arguments:
-        key: A key mapping function.
+        key: A key mapping function or a string.
         comparer: A function of two elements that returns -1 if the first is smaller
             than the second, 0 if they are equal, 1 if the second is larger.
         scan: If True, generate the current maximum on every element.
@@ -724,7 +734,7 @@ class max:
 
     def __init__(self, key=None, comparer=None):
         self.comparer = comparer or operator.gt
-        self.key = key or (lambda x: x)
+        self.key = _keyfn(key)
 
     def reduce(self, last, new):
         lastc = self.key(last)
@@ -835,7 +845,7 @@ def top(n=10, key=None):
 
     Arguments:
         n: The number of top entries to return.
-        key: The comparison key function to use.
+        key: The comparison key function to use or a string.
     """
     return bottom(n=n, key=key, reverse=True)
 

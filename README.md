@@ -35,7 +35,7 @@ with given().display():
 </td>
 <td>
 
-```json
+```
 a: 10; b: 20
 a * b: 200; c: 30
 ```
@@ -64,7 +64,7 @@ print(results)
 </td>
 <td>
 
-```json
+```
 [0, 1, 3, 6, 10]
 ```
 
@@ -95,7 +95,7 @@ with given() as gv:
 </td>
 <td>
 
-```json
+```
 max: 6064
 steps: 63
 ```
@@ -119,7 +119,7 @@ print(st)
 </td>
 <td>
 
-```json
+```
 63
 ```
 
@@ -146,7 +146,7 @@ with given() as gv:
 </td>
 <td>
 
-```json
+```
 elk: 1
 elk: 1; rabbit: 2
 elk: 3; rabbit: 2; wolf: 4
@@ -175,7 +175,7 @@ with given() as gv:
 </td>
 <td>
 
-```json
+```
 i: 0
 i: 10
 i: 20

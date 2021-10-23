@@ -26,9 +26,14 @@
 Simple logging
 
 ```python
+# all usees of give() will log to the configured console
 with given().display():
     a, b = 10, 20
+    # without parameters: last expression + result
     give()
+    # with parameters:
+    # parameter is just value: value => value
+    # parameter is key and value: key => value
     give(a * b, c=30)
 ```
 
@@ -52,6 +57,7 @@ a * b: 200; c: 30
 Extract values into a list
 
 ```python
+# give(key=value) with key == "s" will add value to `results`
 with given()["s"].values() as results:
     s = 0
     for i in range(5):

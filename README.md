@@ -26,12 +26,12 @@
 Simple logging
 
 ```python
-# all usees of give() will log to the configured console
+# All calls to give() will log to the configured console
 with given().display():
     a, b = 10, 20
-    # without parameters: last expression + result
+    # Without parameters: last expression + result
     give()
-    # with parameters:
+    # With parameters:
     # parameter is just value: value => value
     # parameter is key and value: key => value
     give(a * b, c=30)

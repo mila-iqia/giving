@@ -9,26 +9,27 @@ Most of the operators in this page are defined in the rx_ package.
 .. _rx: https://rxpy.readthedocs.io/en/latest/reference_operators.html
 
 The following operators are added in ``giving`` in order to better handle the kind of data produced by ``give``:
-:func:`~giving.operators.affix`, 
+:func:`~giving.operators.affix`,
 :func:`~giving.operators.augment`,
-:func:`~giving.operators.as_`, 
-:func:`~giving.operators.average_and_variance`, 
+:func:`~giving.operators.as_`,
+:func:`~giving.operators.average_and_variance`,
 :func:`~giving.operators.bottom`,
-:func:`~giving.operators.collect_between`, 
-:func:`~giving.operators.format`, 
-:func:`~giving.operators.getitem`, 
-:func:`~giving.operators.group_wrap`, 
-:func:`~giving.operators.keep`, 
-:func:`~giving.operators.kfilter`, 
-:func:`~giving.operators.kmap`, 
+:func:`~giving.operators.collect_between`,
+:func:`~giving.operators.flatten`,
+:func:`~giving.operators.format`,
+:func:`~giving.operators.getitem`,
+:func:`~giving.operators.group_wrap`,
+:func:`~giving.operators.keep`,
+:func:`~giving.operators.kfilter`,
+:func:`~giving.operators.kmap`,
 :func:`~giving.operators.kmerge`,
 :func:`~giving.operators.kscan`,
-:func:`~giving.operators.roll`, 
+:func:`~giving.operators.roll`,
 :func:`~giving.operators.sole`,
-:func:`~giving.operators.tag`, 
+:func:`~giving.operators.tag`,
 :func:`~giving.operators.top`,
-:func:`~giving.operators.variance`, 
-:func:`~giving.operators.where`, 
+:func:`~giving.operators.variance`,
+:func:`~giving.operators.where`,
 :func:`~giving.operators.where_any`.
 
 The following reduction operators exist in ``rx`` but work slightly differently in ``giving``:
@@ -89,6 +90,7 @@ The main difference is the ``scan`` argument, which reinterprets the reduction a
     .. autofunction:: flat_map
     .. autofunction:: flat_map_indexed
     .. autofunction:: flat_map_latest
+    .. autofunction:: flatten
     .. autofunction:: fork_join
     .. autofunction:: format
     .. autofunction:: getitem

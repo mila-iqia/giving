@@ -214,6 +214,10 @@ giving.gvn
 
             See :func:`~giving.operators.flat_map_latest`
 
+        .. function:: flatten(...)
+
+            See :func:`~giving.operators.flatten`
+
         .. function:: fork_join(...)
 
             See :func:`~giving.operators.fork_join`

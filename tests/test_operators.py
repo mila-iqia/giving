@@ -1,3 +1,5 @@
+from types import SimpleNamespace as NS
+
 import pytest
 
 from giving import give, given, giver, operators as op
@@ -708,3 +710,12 @@ def test_flatten():
         things([1, 2], [3, 4, 5])
 
     assert results == [1, 2, 3, 4, 5]
+
+
+def test_getattr():
+    with given() as gv:
+        results = gv["a"].getattr("bloop").accum()
+
+        things(NS(bloop=1), NS(bloop=2), NS(bloop=10))
+
+    assert results == [1, 2, 10]

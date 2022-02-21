@@ -131,6 +131,7 @@ from .extraops import *  # noqa: F401, F403
 ###########
 
 
+getattr = pluck_attr
 norepeat = distinct_until_changed
 throttle = throttle_first
 

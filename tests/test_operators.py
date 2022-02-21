@@ -699,3 +699,12 @@ def test_bottom_empty():
         results1 = gv["a"].top(n=3).accum()
 
     assert results1 == []
+
+
+def test_flatten():
+    with given() as gv:
+        results = gv["a"].flatten().accum()
+
+        things([1, 2], [3, 4, 5])
+
+    assert results == [1, 2, 3, 4, 5]

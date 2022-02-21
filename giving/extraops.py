@@ -427,6 +427,27 @@ class count:
             return self.reduce(last, new)
 
 
+def flatten(mapper=None):
+    """Flatten a sequence of sequences/Observables into a single sequence.
+
+    Without an argument, this is equivalent to ``flat_map(lambda x: x)``.
+
+    .. marble::
+        :alt: getitem
+
+        --x1,x2-x3,x4-|
+        [  flatten()  ]
+        --x1-x2-x3-x4-|
+
+    Arguments:
+        mapper: A function applied to each element of the original sequence
+            which should return a sequence to insert.
+    """
+    if mapper is None:
+        mapper = lambda x: x
+    return rxop.flat_map(mapper)
+
+
 def format(string, raw=False, skip_missing=False):
     """Format an object using a format string.
 
@@ -932,6 +953,7 @@ __all__ = [
     "bottom",
     "collect_between",
     "count",
+    "flatten",
     "format",
     "getitem",
     "group_wrap",

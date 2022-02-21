@@ -444,7 +444,11 @@ def flatten(mapper=None):
             which should return a sequence to insert.
     """
     if mapper is None:
-        mapper = lambda x: x
+
+        def identity(x):
+            return x
+
+        mapper = identity
     return rxop.flat_map(mapper)
 
 

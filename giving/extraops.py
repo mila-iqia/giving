@@ -805,6 +805,29 @@ def sole(*, keep_key=False, exclude=[]):
     return rxop.map(extract)
 
 
+def sort(key=None, reverse=False):
+    """Sort the stream.
+
+    .. marble::
+        :alt: bottom
+
+        ---1-2-7-3-9-0-|
+        [    sort()    ]
+        ---------------0-1-2-3-7-9-|
+
+    Arguments:
+        key: The comparison key function to use or a string.
+        reverse: If True, the sort is descending.
+    """
+    key = _keyfn(key)
+
+    return rxop.pipe(
+        rxop.to_list(),
+        rxop.map(lambda xs: list(sorted(xs, key=key, reverse=reverse))),
+        rxop.flat_map(lambda x: x),
+    )
+
+
 @reducer
 def sum(last, new):
     return last + new
@@ -970,6 +993,7 @@ __all__ = [
     "min",
     "roll",
     "sole",
+    "sort",
     "sum",
     "tag",
     "top",

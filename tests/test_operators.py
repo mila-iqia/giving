@@ -703,6 +703,19 @@ def test_bottom_empty():
     assert results1 == []
 
 
+def test_sort():
+    with given() as gv:
+        results1 = gv["a"].sort().accum()
+        results2 = gv["a"].sort(key=abs).accum()
+        results3 = gv["a"].sort(key=abs, reverse=True).accum()
+
+        things(1, 5, 2, 99, 3, -7, 21)
+
+    assert results1 == [-7, 1, 2, 3, 5, 21, 99]
+    assert results2 == [1, 2, 3, 5, -7, 21, 99]
+    assert results3 == list(reversed(results2))
+
+
 def test_flatten():
     with given() as gv:
         results = gv["a"].flatten().accum()

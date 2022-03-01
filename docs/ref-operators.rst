@@ -26,6 +26,7 @@ The following operators are added in ``giving`` in order to better handle the ki
 :func:`~giving.operators.kscan`,
 :func:`~giving.operators.roll`,
 :func:`~giving.operators.sole`,
+:func:`~giving.operators.sort`,
 :func:`~giving.operators.tag`,
 :func:`~giving.operators.top`,
 :func:`~giving.operators.variance`,
@@ -149,6 +150,7 @@ The main difference is the ``scan`` argument, which reinterprets the reduction a
     .. autofunction:: skip_with_time
     .. autofunction:: slice
     .. autofunction:: sole
+    .. autofunction:: sort
     .. autofunction:: some
     .. autofunction:: starmap
     .. autofunction:: starmap_indexed

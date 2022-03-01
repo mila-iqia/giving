@@ -450,6 +450,10 @@ giving.gvn
 
             See :func:`~giving.operators.sole`
 
+        .. function:: sort(...)
+
+            See :func:`~giving.operators.sort`
+
         .. function:: starmap(...)
 
             See :func:`~giving.operators.starmap`

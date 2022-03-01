@@ -329,7 +329,7 @@ def bottom(n=10, key=None, reverse=False):
                 ins = len(elems) - ins
             elems.insert(ins, new)
             if len(keyed) > n:
-                del keyed[0]
+                del keyed[0 if reverse else -1]
                 elems.pop()
 
         return keyed, elems

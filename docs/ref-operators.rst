@@ -32,6 +32,7 @@ The following operators are added in ``giving`` in order to better handle the ki
 :func:`~giving.operators.variance`,
 :func:`~giving.operators.where`,
 :func:`~giving.operators.where_any`.
+:func:`~giving.operators.wmap`.
 
 The following reduction operators exist in ``rx`` but work slightly differently in ``giving``:
 :func:`~giving.operators.average`,
@@ -196,6 +197,7 @@ The main difference is the ``scan`` argument, which reinterprets the reduction a
     .. autofunction:: window_with_time
     .. autofunction:: window_with_time_or_count
     .. autofunction:: with_latest_from
+    .. autofunction:: wmap
     .. autofunction:: zip
     .. autofunction:: zip_with_iterable
     .. autofunction:: zip_with_list

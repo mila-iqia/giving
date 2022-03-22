@@ -1,6 +1,7 @@
 """Extra operators for giving."""
 
 import builtins
+import inspect
 import operator
 from bisect import bisect_left
 from collections import deque
@@ -971,6 +972,88 @@ def where_any(*keys):
     return rxop.filter(_filt)
 
 
+def wmap(name, fn=None, pass_keys=True):
+    """Map each begin/end pair of a give.wrap.
+
+    In this schema, B and E correspond to the messages sent in the enter and exit
+    phases respectively of the :meth:`~Giver.wrap` context manager.
+
+    .. marble::
+        :alt: group_wrap
+
+        --B1-B2-E2-B3-E3-E1--|
+        [        wmap()      ]
+        --------x2----x3-x1--|
+
+    Example:
+        .. code-block:: python
+
+            def _wrap(x):
+                yield
+                return x * 10
+
+            with given() as gv:
+                results = gv.wmap("block", _wrap).accum()
+
+                with give.wrap("block", x=3):
+                    with give.wrap("block", x=4):
+                        pass
+
+            assert results == [40, 30]
+
+    Arguments:
+        name: Name of the wrap block to group on.
+        fn: A generator function that yields exactly once.
+        pass_keys: Whether to pass the arguments to give.wrap() as
+            keyword arguments at the start (defaults to True).
+    """
+    if fn is None and not isinstance(name, str):
+        name, fn = None, name
+
+    if not inspect.isgeneratorfunction(fn):
+        raise TypeError("wmap() must take a generator function")
+
+    if pass_keys:
+        fn = lax_function(fn)
+
+    def aggro(source):
+        def subscribe(obs, scheduler=None):
+            managers = {}
+
+            def on_next(data):
+                wr = data.get("$wrap", None)
+                if wr is None or (name is not None and wr["name"] != name):
+                    return
+
+                if wr["step"] == "begin":
+                    key = wr["id"]
+                    assert key not in managers
+                    if pass_keys:
+                        manager = fn(**data)
+                    else:
+                        manager = fn()
+
+                    managers[key] = manager
+                    manager.send(None)
+
+                if wr["step"] == "end":
+                    key = wr["id"]
+                    manager = managers[key]
+                    try:
+                        manager.send(data)
+                    except StopIteration as stop:
+                        obs.on_next(stop.value)
+                    else:
+                        raise Exception("Function in wmap() should yield exactly once.")
+                    del managers[key]
+
+            return source.subscribe(on_next, obs.on_error, obs.on_completed, scheduler)
+
+        return rx.create(subscribe)
+
+    return aggro
+
+
 __all__ = [
     "affix",
     "as_",
@@ -1000,4 +1083,5 @@ __all__ = [
     "variance",
     "where",
     "where_any",
+    "wmap",
 ]

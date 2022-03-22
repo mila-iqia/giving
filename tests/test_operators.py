@@ -732,3 +732,45 @@ def test_getattr():
         things(NS(bloop=1), NS(bloop=2), NS(bloop=10))
 
     assert results == [1, 2, 10]
+
+
+def test_wmap():
+    def wrap(x=0):
+        yield
+        return x
+
+    with given() as gv:
+        results1 = gv.wmap(wrap).accum()
+        results2 = gv.wmap("wow", wrap, pass_keys=False).accum()
+        results3 = gv.wmap("no", wrap).accum()
+
+        with give.wrap("wow", x=99):
+            for i in range(10, 15):
+                with give.wrap("yes", x=i):
+                    pass
+
+        assert results1 == [10, 11, 12, 13, 14, 99]
+        assert results2 == [0]
+        assert results3 == []
+
+
+def test_wmap_errors():
+    def wrap_nogen(x=0):
+        return x
+
+    def wrap_yielder(x=0):
+        yield
+        yield
+        yield
+        return x
+
+    with given() as gv:
+        with pytest.raises(TypeError):
+            gv.wmap(wrap_nogen).accum()
+
+    with given() as gv:
+        gv.wmap(wrap_yielder).accum()
+
+        with pytest.raises(Exception, match="should yield exactly once"):
+            with give.wrap("wow", x=99):
+                pass

@@ -622,6 +622,10 @@ giving.gvn
 
             See :func:`~giving.operators.with_latest_from`
 
+        .. function:: wmap(...)
+
+            See :func:`~giving.operators.wmap`
+
         .. function:: zip(...)
 
             See :func:`~giving.operators.zip`

@@ -1,3 +1,5 @@
+from contextlib import contextmanager
+
 import pytest
 from varname import ImproperUseError, VarnameRetrievingError
 
@@ -316,8 +318,6 @@ def test_wrap():
 
 
 def test_wrap2():
-    from contextlib import contextmanager
-
     results = []
 
     @contextmanager
@@ -344,6 +344,28 @@ def test_wrap2():
             give(a=30)
 
     assert results == ["(", 10, "<", 20, ">", 30, ")"]
+
+
+def test_wrap_all():
+    results = []
+
+    @contextmanager
+    def mng():
+        results.append("(")
+        yield
+        results.append(")")
+
+    with given() as g:
+        g.wrap(mng)
+        g["?a"] >> results
+
+        with give.wrap("A"):
+            give(a=10)
+            with give.wrap("B"):
+                give(a=20)
+            give(a=30)
+
+    assert results == ["(", 10, "(", 20, ")", 30, ")"]
 
 
 def test_variant():

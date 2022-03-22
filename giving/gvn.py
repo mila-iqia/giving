@@ -333,6 +333,9 @@ class ObservableProxy:
             pass_keys: Whether to pass the arguments to ``give.wrap`` to this function as keyword
                 arguments. You may use :meth:`kwrap` as a shortcut to ``pass_keys=True``.
         """
+        if fn is None and not isinstance(name, str):
+            name, fn = None, name
+
         if fn is None:
             return partial(self.wrap, name, pass_keys=pass_keys, return_function=True)
 
@@ -346,7 +349,7 @@ class ObservableProxy:
 
         def watch(data):
             wr = data.get("$wrap", None)
-            if wr is None or wr["name"] != name:
+            if wr is None or (name is not None and wr["name"] != name):
                 return
 
             if wr["step"] == "begin":

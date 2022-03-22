@@ -141,6 +141,24 @@ def test_fail_if_empty():
         things(1, 2, 3)
 
 
+def test_fail_if_false():
+    with pytest.raises(Failure):
+        with given() as gv:
+            gv["?a"].all(lambda x: x > 0).fail_if_false()
+            things(1, -2, 3)
+
+    with pytest.raises(Failure) as excinfo:
+        with given() as gv:
+            gv["?a"].all(lambda x: x > 0).fail_if_false("Oh no")
+            things(1, -2, 3)
+
+    assert excinfo.value.args[0] == "Oh no"
+
+    with given() as gv:
+        gv["?a"].all(lambda x: x > 0).fail_if_false()
+        things(1, 2, 3)
+
+
 def test_merge():
     with given() as gv:
         results = (gv["?a"] | gv["?b"] | gv["?c"]).accum()

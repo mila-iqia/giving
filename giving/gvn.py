@@ -219,6 +219,23 @@ class ObservableProxy:
 
         return self.is_empty().subscribe(_fail)
 
+    def fail_if_false(self, message=None, exc_type=Failure, skip=["giving.*", "rx.*"]):
+        """Raise an exception if any element of the stream is falsey.
+
+        False, 0, [], etc. are falsey.
+
+        Arguments:
+            exc_type:
+                The exception type to raise. Defaults to :class:`~giving.gvn.Failure`.
+        """
+
+        def _fail(x):
+            if not x:
+                exc = exc_type("Value is false" if message is None else message)
+                raise exc.with_traceback(reduced_traceback(skip=skip))
+
+        return self.subscribe(_fail)
+
     def give(self, *keys, **extra):
         """Give each element.
 

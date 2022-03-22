@@ -469,3 +469,22 @@ def test_eval():
     results = given()["x"].eval(_main, 41)
 
     assert results == [41, 42]
+
+
+def test_allow_empty():
+    with given() as gv:
+        results = gv["x"].min().allow_empty().accum()
+
+    assert results == []
+
+
+def test_allow_empty_doesnt_catch_all():
+    with given() as gv:
+        results = gv["x"].map(lambda x: 10 / x).allow_empty().accum()
+
+        with pytest.raises(ZeroDivisionError):
+            give(x=5)
+            give(x=0)
+            give(x=2)
+
+    assert results == [2]

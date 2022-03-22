@@ -527,6 +527,23 @@ class SourceProxy(ObservableProxy):
             fn(*args, **kwargs)
         return results
 
+    def allow_empty(self):
+        """Suppresses SequenceContainsNoElementsError.
+
+        This can be chained to ``reduce()``, ``min()``, ``first()``, etc.
+        of an empty sequence to allow the output of these operations to be
+        empty. Otherwise, these operations would raise
+        ``rx.internal.exceptions.SequenceContainsNoElementsError``.
+        """
+
+        def empty(exc, src):
+            if isinstance(exc, rx.internal.exceptions.SequenceContainsNoElementsError):
+                return rx.of()
+            else:
+                return src
+
+        return self.catch(empty)
+
     #################
     # Instantiation #
     #################

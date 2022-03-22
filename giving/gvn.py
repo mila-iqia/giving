@@ -346,7 +346,7 @@ class ObservableProxy:
 
         def watch(data):
             wr = data.get("$wrap", None)
-            if wr is None or wr["name"] is not name:
+            if wr is None or wr["name"] != name:
                 return
 
             if wr["step"] == "begin":

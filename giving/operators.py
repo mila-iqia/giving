@@ -1,4 +1,4 @@
-from rx.operators import (  # noqa: F401
+from reactivex.operators import (  # noqa: F401
     all,
     amb,
     as_observable,
@@ -10,6 +10,7 @@ from rx.operators import (  # noqa: F401
     buffer_with_time_or_count,
     catch,
     combine_latest,
+    compose,
     concat,
     contains,
     debounce,
@@ -57,7 +58,6 @@ from rx.operators import (  # noqa: F401
     pairwise,
     partition,
     partition_indexed,
-    pipe,
     pluck,
     pluck_attr,
     publish,

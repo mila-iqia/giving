@@ -2,7 +2,7 @@ import inspect
 from contextlib import contextmanager
 from functools import partial, wraps
 
-import rx
+import reactivex as rx
 
 from . import operators
 from .executors import Breakpoint, Displayer
@@ -95,10 +95,6 @@ class ObservableProxy:
             method to remove it.
         """
         disposable = self._obs.subscribe(*args, **kwargs)
-        return DisposableWrapper(self, disposable)
-
-    def subscribe_(self, *args, **kwargs):
-        disposable = self._obs.subscribe_(*args, **kwargs)
         return DisposableWrapper(self, disposable)
 
     #########################

@@ -111,7 +111,7 @@ display = Displayer()
 class Breakpoint:  # pragma: no cover
     def __init__(self, use_breakword=False, word=None, skip=[]):
         self.word = word
-        self.skip = ["giving.*", "rx.*", *skip]
+        self.skip = ["giving.*", "reactivex.*", *skip]
         self.bw = False
         if use_breakword:
             try:

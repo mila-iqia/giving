@@ -7,9 +7,9 @@ from bisect import bisect_left
 from collections import deque
 from types import FunctionType
 
-import rx
-from rx import operators as rxop
-from rx.operators import NotSet
+import reactivex as rx
+from reactivex import operators as rxop
+from reactivex.operators import NotSet
 
 from .utils import lax_function, reducer
 
@@ -91,7 +91,7 @@ def roll(n, reduce=None, seed=NotSet):  # noqa: F811
 
         scan_command = rxop.scan(queue, q)
 
-    return rxop.pipe(scan_command, rxop.share())
+    return rxop.compose(scan_command, rxop.share())
 
 
 def affix(**streams):
@@ -146,7 +146,7 @@ def affix(**streams):
             main, *rest = elems
             return {**main, **dict(zip(keys, rest))}
 
-        return rxop.pipe(rxop.zip(*newobs), rxop.map(merge))(source)
+        return rxop.compose(rxop.zip(*newobs), rxop.map(merge))(source)
 
     return create
 
@@ -335,7 +335,7 @@ def bottom(n=10, key=None, reverse=False):
 
         return keyed, elems
 
-    return rxop.pipe(
+    return rxop.compose(
         rxop.reduce(update, seed=None),
         rxop.map(lambda x: () if x is None else x[1]),
         rxop.flat_map(lambda x: x),
@@ -387,7 +387,9 @@ def collect_between(start, end, common=None):
                         current = dicts.setdefault(key, {})
                         current.update(value)
 
-            return source.subscribe(on_next, obs.on_error, obs.on_completed, scheduler)
+            return source.subscribe(
+                on_next, obs.on_error, obs.on_completed, scheduler=scheduler
+            )
 
         return rx.create(subscribe)
 
@@ -481,7 +483,7 @@ def format(string, raw=False, skip_missing=False):
             return string.format(x)
 
     if skip_missing:
-        return rxop.pipe(
+        return rxop.compose(
             rxop.map(_fmt),
             rxop.filter(lambda x: x is not SKIP),
         )
@@ -511,7 +513,7 @@ def getitem(*keys, strict=False):
         if strict:
             return rxop.map(operator.itemgetter(key))
         else:
-            return rxop.pipe(
+            return rxop.compose(
                 rxop.filter(lambda arg: key in arg),
                 rxop.map(operator.itemgetter(key)),
             )
@@ -519,7 +521,7 @@ def getitem(*keys, strict=False):
         if strict:
             return rxop.map(lambda arg: tuple(arg[key] for key in keys))
         else:
-            return rxop.pipe(
+            return rxop.compose(
                 rxop.filter(lambda arg: builtins.all(key in arg for key in keys)),
                 rxop.map(lambda arg: tuple(arg[key] for key in keys)),
             )
@@ -558,14 +560,14 @@ def group_wrap(name, **conditions):
     from .gvn import ObservableProxy
 
     def oper(source):
-        opens = rxop.pipe(
+        opens = rxop.compose(
             where("$wrap", **conditions),
             getitem("$wrap"),
             where(step="begin", name=name),
         )
 
         def closes(data):
-            return rxop.pipe(
+            return rxop.compose(
                 getitem("$wrap", strict=False), where(step="end", id=data["id"])
             )(source)
 
@@ -603,7 +605,7 @@ def keep(*keys, **remap):
     def _rekey(data):
         return {k2: data[k1] for k1, k2 in remap.items() if k1 in data}
 
-    return rxop.pipe(rxop.filter(_filt), rxop.map(_rekey))
+    return rxop.compose(rxop.filter(_filt), rxop.map(_rekey))
 
 
 def kfilter(fn):
@@ -822,7 +824,7 @@ def sort(key=None, reverse=False):
     """
     key = _keyfn(key)
 
-    return rxop.pipe(
+    return rxop.compose(
         rxop.to_list(),
         rxop.map(lambda xs: list(sorted(xs, key=key, reverse=reverse))),
         rxop.flat_map(lambda x: x),
@@ -876,7 +878,7 @@ def tag(group="", field="$word", group_field="$group"):
             setattr(data, "$word", word)
         return data
 
-    return rxop.pipe(rxop.map(tag_data), rxop.share())
+    return rxop.compose(rxop.map(tag_data), rxop.share())
 
 
 def top(n=10, key=None):
@@ -900,7 +902,7 @@ def top(n=10, key=None):
 
 
 def variance(*args, **kwargs):
-    return rxop.pipe(
+    return rxop.compose(
         average_and_variance(*args, **kwargs), rxop.starmap(lambda avg, var: var)
     )
 
@@ -1047,7 +1049,9 @@ def wmap(name, fn=None, pass_keys=True):
                         raise Exception("Function in wmap() should yield exactly once.")
                     del managers[key]
 
-            return source.subscribe(on_next, obs.on_error, obs.on_completed, scheduler)
+            return source.subscribe(
+                on_next, obs.on_error, obs.on_completed, scheduler=scheduler
+            )
 
         return rx.create(subscribe)
 

@@ -1,5 +1,5 @@
 import pytest
-from rx import of
+from reactivex import of
 
 from giving import give, given
 from giving.gvn import Failure, ObservableProxy

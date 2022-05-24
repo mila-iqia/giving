@@ -3,8 +3,8 @@ import functools
 import sys
 import types
 
-from rx import operators as rxop
-from rx.operators import NotSet
+from reactivex import operators as rxop
+from reactivex.operators import NotSet
 
 
 def keyword_decorator(deco):
@@ -174,7 +174,7 @@ def reducer(func, default_seed=NotSet, postprocess=NotSet):
             oper = rxop.reduce(reducer.reduce, seed=seed)
 
         if postprocess is not NotSet:
-            oper = rxop.pipe(oper, postprocess)
+            oper = rxop.compose(oper, postprocess)
 
         return oper
 
